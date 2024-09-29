@@ -27,8 +27,8 @@ jobs:
 
       - name: Run tests
         run: |
-          cd English_Application_API/backend/backend/
-          python manage.py test  # Thay thế bằng lệnh test của bạn
+          
+          python /backend/manage.py test  # Thay thế bằng lệnh test của bạn
 
   deploy:
     runs-on: ubuntu-latest
