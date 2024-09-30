@@ -116,11 +116,7 @@ class UploadAvatarUserSerializer(serializers.ModelSerializer):
             return None
 
 class ProfileSerializer(serializers.ModelSerializer):
-    # full_name = serializers.CharField(required=True)
-    # english_level = serializers.CharField(required=True)
-    # daily_study_time = serializers.CharField(required=True)
-    # phone_number = serializers.CharField(required=True)   
-    # gender = serializers.BooleanField(required=True)
+    avatar = serializers.SerializerMethodField()
     class Meta:
         model = Profile
         fields = [
@@ -131,7 +127,12 @@ class ProfileSerializer(serializers.ModelSerializer):
             "daily_study_time",
             "phone_number"
         ]
-
+    def get_avatar(self, obj):
+        request = self.context.get('request')
+        if obj.avatar:
+            return request.build_absolute_uri(obj.avatar.url)
+        return None
+    
     def update(self, request):
         try:
             validated_data = self.validated_data

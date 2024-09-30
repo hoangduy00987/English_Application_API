@@ -15,6 +15,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
+
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework.response import Response
@@ -193,7 +194,7 @@ class ProfileView(APIView):
     def get(self,request):
         try:
             queryset = Profile.objects.get(user=request.user)
-            serializer = self.serializer_class(queryset)
+            serializer = self.serializer_class(queryset, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as error:
             print("error: ", error)

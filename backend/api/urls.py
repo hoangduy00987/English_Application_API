@@ -4,4 +4,5 @@ from .views import *
 
 urlpatterns = [
     path('user/', include('api.login.urls')),
+    path('vocabulary/', include('api.vocabulary.urls')),
 ]
