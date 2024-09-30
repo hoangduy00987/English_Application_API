@@ -13,6 +13,7 @@ class Topic(models.Model):
     updated_at = models.DateTimeField(null=True,blank=True)
     order = models.IntegerField(null=True, blank=False, unique=True)
     times_studied = models.IntegerField(null=True)
+    
     def __str__(self) -> str:
         return self.name
     
