@@ -46,12 +46,12 @@ class UserTopicViewSet(viewsets.ReadOnlyModelViewSet):
     @action(methods='GET', detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
     def topic_user_get_all(self, request):
         try:
-            queryset = Topic.objects.filter(is_deleted=False, is_public=True).order_by("order")
-            page = self.paginate_queryset(queryset)
+            topic = Topic.objects.filter(is_deleted=False, is_public=True).order_by("order")
+            page = self.paginate_queryset(topic)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
-            serializer = self.get_serializer(queryset, many=True)
+            serializer = self.get_serializer(topic, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as error:
             print('error: ', error)
@@ -76,6 +76,12 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
                 serializer = self.serializer_class(remaining_vocab, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
+                next_topic = Topic.objects.filter(order__gt=topic.order,
+                                                       is_deleted=False, is_public=True).first()
+                if next_topic:
+                    next_topic.is_locked=False
+                    next_topic.save()
+
                 learned_vocab = vocabulary_list.filter(id__in=learned_vocab_ids)
                 next_vocab = random.choice(learned_vocab)
                 serializer = self.serializer_class(next_vocab, context={'request': request})
