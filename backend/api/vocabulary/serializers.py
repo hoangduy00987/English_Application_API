@@ -12,6 +12,8 @@ from backend import settings
 from django.core.validators import EmailValidator
 from django.core.mail import send_mail, EmailMessage
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from django.utils import timezone
+from datetime import timedelta
 
 
 class TopicSerializers(serializers.ModelSerializer):
@@ -50,15 +52,21 @@ class ListVocabularyOfTopicSerializers(serializers.ModelSerializer):
 
 class LearnVocabularySerializers(serializers.ModelSerializer):
     pronunciation = serializers.SerializerMethodField()
+    mini_exercises = serializers.SerializerMethodField()
+
     class Meta:
         model = Vocabulary
-        fields = ['id','word','transcription','meaning','example','pronunciation']
+        fields = ['id','word','transcription','meaning','example','word_image','pronunciation','pronun_video','mini_exercises']
 
     def get_pronunciation(self, obj):
         request = self.context.get('request')
         if obj.pronunciation:
             return request.build_absolute_uri(obj.pronunciation.url)
         return None
+    
+    def get_mini_exercises(self, obj):
+        mini_exercises = MiniExercise.objects.filter(vocabulary_id=obj).order_by('?')[:2]
+        return MiniExerciseSerializers(mini_exercises, many=True).data
 
     
         
@@ -70,7 +78,58 @@ class UserVocabularyProcessSerializers(serializers.ModelSerializer):
     def save(self,request):
         try:
             vocabulary_id = self.validated_data['vocabulary_id']
-            return UserVocabularyProcess.objects.create(user_id=request.user,vocabulary_id=vocabulary_id, is_learned=True)
+            learned_at = timezone.localtime(timezone.now()) # Now
+            next_review_at = learned_at + timedelta(days=1) # Review after 24h
+
+            return UserVocabularyProcess.objects.create(
+                user_id=request.user,
+                vocabulary_id=vocabulary_id, 
+                is_learned=True, 
+                learned_at=learned_at,
+                next_review_at=next_review_at
+            )
         except Exception as error:
             print("UserVocabularyProcessSerializers_save_error: ", error)
             return None
+        
+class MiniExerciseSerializers(serializers.ModelSerializer):
+    fillin_answers = serializers.SerializerMethodField()
+    multiple_choice_answers = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MiniExercise
+        fields = ['id', 'exercise_type', 'content', 'fillin_answers', 'multiple_choice_answers']
+
+    def get_fillin_answers(self, obj):
+        # get answer from MiniExerciseFillinAnswer
+        if obj.exercise_type == 'T1': # Fill in exercise
+            fillin_answers = MiniExerciseFillinAnswer.objects.filter(exercise_id=obj)
+            return MiniExerciseFillinAnswerSerializers(fillin_answers, many=True).data
+        return None
+    
+    def get_multiple_choice_answers(self, obj):
+        # get answer from MiniExerciseMultipleChoicesAnswer
+        if obj.exercise_type == 'T2': # Multiple choice exercise
+            multiple_choice_answers = MiniExerciseMultipleChoicesAnswer.objects.filter(exercise_id=obj)
+            return MiniExerciseMultipleChoicesAnswerSerializers(multiple_choice_answers, many=True).data
+        return None
+        
+class MiniExerciseFillinAnswerSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = MiniExerciseFillinAnswer
+        fields = ['correct_answer', 'available_answers']
+
+class MiniExerciseMultipleChoicesAnswerSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = MiniExerciseMultipleChoicesAnswer
+        fields = ['answer', 'is_correct']
+
+class ListVocabularyProcessOfUserSerializers(serializers.ModelSerializer):
+    word = serializers.SerializerMethodField()
+    class Meta:
+        model = UserVocabularyProcess
+        fields = ['id','learned_at','review_count','next_review_at','is_learned','word']
+
+    def get_word(self, obj):
+        vocabulary = Vocabulary.objects.get(word=obj)
+        return vocabulary.word

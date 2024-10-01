@@ -12,6 +12,8 @@ from .serializers import *
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 import random 
+from django.utils import timezone
+from datetime import datetime
 
 class HistoryLogPagination(PageNumberPagination):
     page_size = 5
@@ -99,16 +101,89 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
 class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserVocabularyProcessSerializers
-    @action(methods='GET', detail=False, url_path="user_learn_vocabulary_get", url_name="user_learn_vocabulary_get")
+    @action(methods='POST', detail=False, url_path="user_learn_vocabulary_post", url_name="user_learn_vocabulary_post")
     def user_learn_vocabulary_post(self, request):
         try:
-            serializer = self.serializer_class(data=request.data)
-            if serializer.is_valid():
-                serializer.save(request=request)
-                return Response({'message':'You have finished studying this word'}, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            vocabulary_id = request.data.get('vocabulary_id')
+
+            if not vocabulary_id:
+                return Response({"message": "vocabulary_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # check user did learned this vocabulary
+            user_vocab_process = UserVocabularyProcess.objects.filter(
+                user_id=request.user,
+                vocabulary_id=vocabulary_id
+            ).first()
+
+            if user_vocab_process:
+                # update review_count
+                user_vocab_process.review_count = (user_vocab_process.review_count or 0) + 1
+                user_vocab_process.save()
+                return Response({'message':'You have finished reviewing this word.'}, status=status.HTTP_200_OK)
+            else:
+                # if none, create new record
+                serializer = self.serializer_class(data=request.data)
+                if serializer.is_valid():
+                    serializer.save(request=request)
+                    return Response({'message':'You have finished studying this word.'}, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
         except Exception as error:
             print("error", error) 
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(methods=['POST'], detail=False, url_path="set_next_review", url_name="set_next_review")
+    def set_next_review(self, request):
+        try:
+            vocabulary_id = request.data.get('vocabulary_id')
+            next_review_at_str = request.data.get('next_review_at')
+
+            if not vocabulary_id or not next_review_at_str:
+                return Response({"message": "Missing vocabulary_id or next_review_at"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Parse the next_review_at string to a datetime object
+            try:
+                next_review_at = datetime.fromisoformat(next_review_at_str)
+                next_review_at = timezone.make_aware(next_review_at, timezone.get_current_timezone())
+            except ValueError:
+                return Response({"message": "Invalid date format for next_review_at"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # check if vocabulary is learned yet
+            user_vocab_process = UserVocabularyProcess.objects.filter(
+                user_id=request.user,
+                vocabulary_id=vocabulary_id,
+                is_learned=True
+            ).first()
+
+            if not user_vocab_process:
+                return Response({"message": "Vocabulary not learned yet or does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate next_review_at
+            if next_review_at < timezone.localtime(timezone.now()):
+                return Response({"message": "Review time must be after the current time."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Update next_review_at
+            user_vocab_process.next_review_at = next_review_at
+            user_vocab_process.save()
+
+            return Response({"message": "Next review time updated successfully."}, status=status.HTTP_200_OK)
+        
+        except Exception as error:
+            print("set_next_review_error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(methods=['GET'], detail=False, url_path="user_vocab_process", url_name="user_vocab_process")
+    def user_vocab_process(self, request):
+        try:
+            # get all process of current user
+            user_vocab_records = UserVocabularyProcess.objects.filter(user_id=request.user)
+
+            # Serialize data
+            serializer = ListVocabularyProcessOfUserSerializers(user_vocab_records, many=True)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 #get all vocabulary of topic
