@@ -25,7 +25,6 @@ class Vocabulary(models.Model):
     example = models.TextField(blank=True, null=True)
     word_image = models.ImageField(upload_to='word_images/', blank=True, null=True)
     pronunciation = models.FileField(upload_to='audio_pronun_files/', blank=True, null=True)
-    pronun_video = models.FileField(upload_to='pronun_videos/', blank=True, null=True)
     created_at = models.DateTimeField(null=True,blank=True)
     updated_at = models.DateTimeField(null=True,blank=True)
     is_deleted = models.BooleanField(default=False)

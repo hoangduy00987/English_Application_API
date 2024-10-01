@@ -56,7 +56,7 @@ class LearnVocabularySerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Vocabulary
-        fields = ['id','word','transcription','meaning','example','word_image','pronunciation','pronun_video','mini_exercises']
+        fields = ['id','word','transcription','meaning','example','word_image','pronunciation','mini_exercises']
 
     def get_pronunciation(self, obj):
         request = self.context.get('request')
