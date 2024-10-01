@@ -23,7 +23,9 @@ class Vocabulary(models.Model):
     transcription = models.CharField(max_length=255)
     meaning = models.CharField(max_length=255)
     example = models.TextField(blank=True, null=True)
-    pronunciation = models.ImageField(upload_to='audio_pronun_file/', blank=True, null=True)
+    word_image = models.ImageField(upload_to='word_images/', blank=True, null=True)
+    pronunciation = models.FileField(upload_to='audio_pronun_files/', blank=True, null=True)
+    pronun_video = models.FileField(upload_to='pronun_videos/', blank=True, null=True)
     created_at = models.DateTimeField(null=True,blank=True)
     updated_at = models.DateTimeField(null=True,blank=True)
     is_deleted = models.BooleanField(default=False)
@@ -44,3 +46,39 @@ class UserVocabularyProcess(models.Model):
 
     def __str__(self) -> str:
         return self.vocabulary_id.word
+
+# Exercise type choices
+EXERCISE_TYPE = [
+    ('T1', 'Fill in exercise'),
+    ('T2', 'Multiple choices exercise')
+]
+
+class MiniExercise(models.Model):
+    vocabulary_id = models.ForeignKey(Vocabulary, on_delete=models.CASCADE)
+    exercise_type = models.CharField(max_length=50, choices=EXERCISE_TYPE)
+    content = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.vocabulary_id.word + ': ' + self.content + '-' + self.exercise_type
+    
+class MiniExerciseFillinAnswer(models.Model):
+    exercise_id = models.ForeignKey(MiniExercise, on_delete=models.CASCADE)
+    correct_answer = models.CharField(max_length=255)
+    available_answers = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.exercise_id.vocabulary_id.word + ': ' + self.exercise_id.content + ' Answer-' + self.correct_answer
+    
+class MiniExerciseMultipleChoicesAnswer(models.Model):
+    exercise_id = models.ForeignKey(MiniExercise, on_delete=models.CASCADE)
+    answer = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.exercise_id.vocabulary_id.word + ': ' + self.exercise_id.content + '-' + self.answer + ': ' + str(self.is_correct)
