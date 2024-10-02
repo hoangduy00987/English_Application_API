@@ -61,7 +61,7 @@ class UserTopicViewSet(viewsets.ReadOnlyModelViewSet):
 
 #Get vocabuylray to learn
 class UserVocabularyViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     serializer_class = LearnVocabularySerializers
     @action(methods='GET', detail=False, url_path="user_learn_vocabulary_get", url_name="user_learn_vocabulary_get")
     def user_learn_vocabulary_get(self, request):
@@ -202,3 +202,5 @@ class ListVocabularyViewSet(APIView):
         except Exception as error:
             print('error: ', error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        

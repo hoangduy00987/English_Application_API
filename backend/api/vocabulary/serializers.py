@@ -17,17 +17,17 @@ from datetime import timedelta
 
 
 class TopicSerializers(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+    # image = serializers.SerializerMethodField()
     num_words = serializers.SerializerMethodField()
     class Meta:
         model = Topic
         fields = ['id','order','name', 'image','num_words','is_locked']
 
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if obj.image:
-            return request.build_absolute_uri(obj.image.url)
-        return None
+    # def get_image(self, obj):
+    #     request = self.context.get('request')
+    #     if obj.image:
+    #         return request.build_absolute_uri(obj.image.url)
+    #     return None
     def get_num_words(self, obj):
         return obj.vocabularies.filter(is_deleted=False).count()
 
@@ -51,18 +51,18 @@ class ListVocabularyOfTopicSerializers(serializers.ModelSerializer):
         fields = ['id', 'name', 'vocabularies']
 
 class LearnVocabularySerializers(serializers.ModelSerializer):
-    pronunciation = serializers.SerializerMethodField()
+    # pronunciation_audio = serializers.SerializerMethodField()
     mini_exercises = serializers.SerializerMethodField()
 
     class Meta:
         model = Vocabulary
-        fields = ['id','word','transcription','meaning','example','word_image','pronunciation','mini_exercises']
+        fields = ['id','word','transcription','meaning','example','word_image','pronunciation_audio','pronunciation_video','mini_exercises']
 
-    def get_pronunciation(self, obj):
-        request = self.context.get('request')
-        if obj.pronunciation:
-            return request.build_absolute_uri(obj.pronunciation.url)
-        return None
+    # def get_pronunciation_audio(self, obj):
+    #     request = self.context.get('request')
+    #     if obj.pronunciation_audio:
+    #         return request.build_absolute_uri(obj.pronunciation_audio.url)
+    #     return None
     
     def get_mini_exercises(self, obj):
         mini_exercises = MiniExercise.objects.filter(vocabulary_id=obj).order_by('?')[:2]
@@ -117,12 +117,12 @@ class MiniExerciseSerializers(serializers.ModelSerializer):
 class MiniExerciseFillinAnswerSerializers(serializers.ModelSerializer):
     class Meta:
         model = MiniExerciseFillinAnswer
-        fields = ['correct_answer', 'available_answers']
+        fields = ['id','correct_answer', 'available_answers']
 
 class MiniExerciseMultipleChoicesAnswerSerializers(serializers.ModelSerializer):
     class Meta:
         model = MiniExerciseMultipleChoicesAnswer
-        fields = ['answer', 'is_correct']
+        fields = ['id','answer', 'is_correct']
 
 class ListVocabularyProcessOfUserSerializers(serializers.ModelSerializer):
     word = serializers.SerializerMethodField()
