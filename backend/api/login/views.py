@@ -129,7 +129,8 @@ class LoginView(APIView):
                 return Response(
                     {
                         'refresh': str(refresh),
-                        'access': str(refresh.access_token)
+                        'access': str(refresh.access_token),
+                        'is_superuser': user.is_superuser  # Thêm thông tin is_superuser vào phản hồi
                     },
                     status=status.HTTP_200_OK
                 )
