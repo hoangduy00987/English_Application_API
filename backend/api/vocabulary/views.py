@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import status,viewsets
 from django.contrib.auth.models import User
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from .serializers import *
 from ..submodels.models_user import *
 from rest_framework.views import APIView
@@ -16,9 +16,9 @@ from django.utils import timezone
 from datetime import datetime
 
 class HistoryLogPagination(PageNumberPagination):
-    page_size = 5
+    page_size = 20
     page_size_query_param = 'page_size'
-    max_page_size = 10
+    max_page_size = 100
 
     def get_paginated_response(self, data):
         next_page = previous_page = None
@@ -39,10 +39,11 @@ class HistoryLogPagination(PageNumberPagination):
             'results': data,
         })
 
+#=====================USER
 # get all topic
 class UserTopicViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
-    serializer_class = TopicSerializers
+    serializer_class = UserTopicSerializers
     pagination_class = HistoryLogPagination
 
     @action(methods='GET', detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
@@ -187,8 +188,8 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 #get all vocabulary of topic
-class ListVocabularyViewSet(APIView):
-    serializer_class = ListVocabularyOfTopicSerializers
+class UserListVocabularyViewSet(APIView):
+    serializer_class = UserListVocabularyOfTopicSerializers
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -203,4 +204,148 @@ class ListVocabularyViewSet(APIView):
             print('error: ', error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         
+    
+#============Admin
+class AdminManageTopicViewset(viewsets.ModelViewSet):
+    serializer_class = AdminTopicSerializers
+    pagination_class = HistoryLogPagination
+    permission_classes = [IsAdminUser]
+
+    @action(methods=["GET"], detail=False, url_path="admin_topic_get_all", url_name="admin_topic_get_all")
+    def admin_topic_get_all(self, request):
+        try:
+            queryset = Topic.objects.filter(is_deleted=False).order_by("order")
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
+   
+    @action(methods='GET', detail=True, url_path="admin_topic_get_by_id", url_name="admin_topic_get_by_id")
+    def admin_topic_get_by_id(self, request):
+        try:
+            topic_id = request.query_params.get("topic_id")
+            queryset = Topic.objects.get(id=topic_id,is_deleted=False)
+            serializer = self.serializer_class(queryset, context={'request':request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Topic.DoesNotExist:
+            return Response({"message":"Topic Not Found"},status=status.HTTP_404_NOT_FOUND)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods="POST", detail=False, url_path="admin_topic_add", url_name="admin_topic_add")
+    def admin_topic_add(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                topic = serializer.save(request=request)
+                return Response({"message":"topic added successfuly"}, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("error", error) 
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         
+    @action(methods="PUT", detail=False, url_path="admin_topic_update_by_id", url_name="admin_topic_update_by_id")
+    def admin_topic_update_by_id(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                update_model = serializer.update(request=request)
+                if update_model is None:
+                    return Response({"message": "Topic not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message":"topic updated successfuly"}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(methods="DELETE", detail=False, url_path="admin_topic_delete_by_id", url_name="admin_topic_delete_by_id")
+    def admin_topic_delete_by_id(self, request):
+        try:
+            queryset = self.serializer_class()
+            delete_model = queryset.delete(request=request)
+            if delete_model is None:
+                 return Response({"message": "Topic not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Topic  deleted successfully"}, status=status.HTTP_200_OK)  
+        except Exception as error:
+            print("error", error) 
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminListVocabularyViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminVocabularyOfTopicSerializers
+    permission_classes = [IsAdminUser]
+
+    @action(methods="GET", detail=False, url_path="admin_vocabulary_get_all", url_name="admin_vocabulary_get_all")
+    def admin_vocabulary_get_all(self, request):
+        try:
+            topic_id = request.query_params.get('topic_id')
+            topic = Topic.objects.get(id=topic_id,is_deleted=False)
+            serializer = self.serializer_class(topic, context={'request':request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Topic.DoesNotExist:
+            return Response({"message": "Topic Not Found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as error:
+            print('error: ', error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminVocabularyViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminVocabularySerizlizers
+    permission_classes = [IsAdminUser]  
+    @action(methods='GET', detail=True, url_path="admin_vocabulary_get_by_id", url_name="admin_vocabulary_get_by_id")
+    def admin_vocabulary_get_by_id(self, request):
+        try:
+            topic_id = request.query_params.get("vocabulary_id")
+            queryset = Vocabulary.objects.get(id=topic_id,is_deleted=False)
+            serializer = self.serializer_class(queryset, context={'request':request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Topic.DoesNotExist:
+            return Response({"message":"Vocabulary Not Found"},status=status.HTTP_404_NOT_FOUND)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(methods="POST", detail=False, url_path="admin_vocabulary_add", url_name="admin_vocabulary_add")
+    def admin_vocabulary_add(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                topic = serializer.save(request=request)
+                return Response({"message":"vocabulary added successfuly"}, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("error", error) 
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    
+    @action(methods="PUT", detail=False, url_path="admin_vocabulary_update_by_id", url_name="admin_vocabulary_update_by_id")
+    def admin_vocabulary_update_by_id(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                update_model = serializer.update(request=request)
+                if update_model is None:
+                    return Response({"message": "Vocabulary not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message":"Vocabulary updated successfuly"}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(methods="DELETE", detail=False, url_path="admin_vocabulary_delete_by_id", url_name="admin_vocabulary_delete_by_id")
+    def admin_vocabulary_delete_by_id(self, request):
+        try:
+            queryset = self.serializer_class()
+            delete_model = queryset.delete(request=request)
+            if delete_model is None:
+                 return Response({"message": "Vocabulary not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Vocabulary  deleted successfully"}, status=status.HTTP_200_OK)  
+        except Exception as error:
+            print("error", error) 
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)

@@ -16,7 +16,12 @@ class Topic(models.Model):
     
     def __str__(self) -> str:
         return self.name
-    
+
+
+# class UserTopicProgress(models.Model):
+#     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+#     topic_id = models.ForeignKey(Topic, on_delete=models.CASCADE)
+    # is_locked
 class Vocabulary(models.Model):
     topic_id = models.ForeignKey(Topic, related_name='vocabularies',on_delete=models.CASCADE)
     word = models.CharField(max_length=255)
