@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, related_name='user', on_delete=models.CASCADE)
     is_first_login = models.BooleanField(default=True)
     full_name = models.CharField(max_length=255)
     gender = models.BooleanField(default=False)
