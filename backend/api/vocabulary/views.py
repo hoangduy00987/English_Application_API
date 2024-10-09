@@ -49,12 +49,21 @@ class UserTopicViewSet(viewsets.ReadOnlyModelViewSet):
     @action(methods='GET', detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
     def topic_user_get_all(self, request):
         try:
-            topic = Topic.objects.filter(is_deleted=False, is_public=True).order_by("order")
-            page = self.paginate_queryset(topic)
+            topics = Topic.objects.filter(is_deleted=False, is_public=True).order_by("order")
+            first_topic = topics.first()
+
+            if first_topic:
+                user_topic, created= UserTopicProgress.objects.get_or_create(
+                    user_id=request.user,
+                    topic_id=first_topic
+                )
+                user_topic.is_locked = False  
+                user_topic.save()
+            page = self.paginate_queryset(topics)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
-            serializer = self.get_serializer(topic, many=True)
+            serializer = self.get_serializer(topics, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as error:
             print('error: ', error)
@@ -62,7 +71,7 @@ class UserTopicViewSet(viewsets.ReadOnlyModelViewSet):
 
 #Get vocabuylray to learn
 class UserVocabularyViewSet(viewsets.ModelViewSet):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = LearnVocabularySerializers
     @action(methods='GET', detail=False, url_path="user_learn_vocabulary_get", url_name="user_learn_vocabulary_get")
     def user_learn_vocabulary_get(self, request):
@@ -74,17 +83,21 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
                 user_id=request.user, is_learned=True
             ).values_list('vocabulary_id', flat=True)
             remaining_vocab = vocabulary_list.exclude(id__in=learned_vocab_ids).first()
-
+            
             if remaining_vocab:
                 serializer = self.serializer_class(remaining_vocab, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 next_topic = Topic.objects.filter(order__gt=topic.order,
                                                        is_deleted=False, is_public=True).first()
+                print(next_topic)
                 if next_topic:
-                    next_topic.is_locked=False
-                    next_topic.save()
-
+                    next_user_topic,created = UserTopicProgress.objects.get_or_create(
+                        user_id=request.user,
+                        topic_id=next_topic
+                    )
+                    next_user_topic.is_locked = False
+                    next_user_topic.save()
                 learned_vocab = vocabulary_list.filter(id__in=learned_vocab_ids)
                 next_vocab = random.choice(learned_vocab)
                 serializer = self.serializer_class(next_vocab, context={'request': request})

@@ -18,10 +18,14 @@ class Topic(models.Model):
         return self.name
 
 
-# class UserTopicProgress(models.Model):
-#     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-#     topic_id = models.ForeignKey(Topic, on_delete=models.CASCADE)
-    # is_locked
+class UserTopicProgress(models.Model):
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    topic_id = models.ForeignKey(Topic, related_name='topics',on_delete=models.CASCADE)
+    is_locked = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return  self.topic_id.name
+    
 class Vocabulary(models.Model):
     topic_id = models.ForeignKey(Topic, related_name='vocabularies',on_delete=models.CASCADE)
     word = models.CharField(max_length=255)

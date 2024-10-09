@@ -17,17 +17,16 @@ from datetime import timedelta
 
 #============USER
 class UserTopicSerializers(serializers.ModelSerializer):
-    # image = serializers.SerializerMethodField()
+    is_locked = serializers.SerializerMethodField()
     num_words = serializers.SerializerMethodField()
     class Meta:
         model = Topic
         fields = ['id','order','name', 'image','num_words','is_locked']
 
-    # def get_image(self, obj):
-    #     request = self.context.get('request')
-    #     if obj.image:
-    #         return request.build_absolute_uri(obj.image.url)
-    #     return None
+    def get_is_locked(self, obj):
+        user = self.context['request'].user
+        user_topic_process = UserTopicProgress.objects.filter(user_id=user,topic_id=obj).first()
+        return user_topic_process.is_locked if user_topic_process else True
     def get_num_words(self, obj):
         return obj.vocabularies.filter(is_deleted=False).count()
     
