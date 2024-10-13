@@ -321,8 +321,6 @@ class AdminListVocabularyViewSet(viewsets.ModelViewSet):
             topic = Topic.objects.get(id=topic_id,is_deleted=False)
             serializer = self.serializer_class(topic, context={'request':request})
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Topic.DoesNotExist:
-            return Response({"message": "Topic Not Found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print('error: ', error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
@@ -338,7 +336,7 @@ class AdminVocabularyViewSet(viewsets.ModelViewSet):
             queryset = Vocabulary.objects.get(id=topic_id,is_deleted=False)
             serializer = self.serializer_class(queryset, context={'request':request})
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Topic.DoesNotExist:
+        except Vocabulary.DoesNotExist:
             return Response({"message":"Vocabulary Not Found"},status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print("error", error)
@@ -349,7 +347,7 @@ class AdminVocabularyViewSet(viewsets.ModelViewSet):
         try:
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
-                topic = serializer.save(request=request)
+                serializer.save(request=request)
                 return Response({"message":"vocabulary added successfuly"}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:

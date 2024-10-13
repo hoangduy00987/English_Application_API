@@ -19,17 +19,33 @@ from datetime import timedelta
 class UserTopicSerializers(serializers.ModelSerializer):
     is_locked = serializers.SerializerMethodField()
     num_words = serializers.SerializerMethodField()
+    num_words_learned = serializers.SerializerMethodField()
     class Meta:
         model = Topic
-        fields = ['id','order','name', 'image','num_words','is_locked']
+        fields = ['id','order','name', 'image','num_words','num_words_learned','is_locked']
 
     def get_is_locked(self, obj):
         user = self.context['request'].user
         user_topic_process = UserTopicProgress.objects.filter(user_id=user,topic_id=obj).first()
         return user_topic_process.is_locked if user_topic_process else True
+    
     def get_num_words(self, obj):
         return obj.vocabularies.filter(is_deleted=False).count()
     
+    def get_num_words_learned(self, obj):
+        user = self.context['request'].user
+        topic_id = obj.id
+        learned_count = UserVocabularyProcess.objects.filter(
+            user_id=user,
+            vocabulary_id__topic_id=topic_id,
+            is_learned=True
+        ).count()
+
+        return learned_count
+
+
+
+        
     def save(self, request):
         name = self.validated_data['name']
         order = self.validated_data['order']
