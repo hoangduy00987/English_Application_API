@@ -127,8 +127,6 @@ class LoginView(APIView):
                 user = serializer.validated_data['user']
                 refresh = RefreshToken.for_user(user)
                 profile, created = Profile.objects.get_or_create(user=user)
-                profile.last_login = datetime.now()  
-                profile.save()
                 return Response(
                     {
                         'refresh': str(refresh),

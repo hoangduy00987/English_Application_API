@@ -55,7 +55,7 @@ class RegisterSerializers(serializers.ModelSerializer):
         password = self.validated_data['password']
         email = self.validated_data['email']
         user = User.objects.create_user(username=username,password=password,email=email)
-        Profile.objects.create(user=user,created_at=datetime.now(),last_login=datetime.now())
+        Profile.objects.create(user=user,created_at=datetime.now())
         return user
     
 
