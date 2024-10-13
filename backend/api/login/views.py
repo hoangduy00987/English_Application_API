@@ -77,7 +77,6 @@ class GoogleView(APIView):
             user=user,created_at=datetime.now()
             )
             is_first_login = profile.is_first_login
-        profile.last_login = datetime.now()  
         profile.save()    
         # Create And Response token to user
         token = RefreshToken.for_user(user)
