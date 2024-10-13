@@ -66,13 +66,17 @@ class VocabularySerializers(serializers.ModelSerializer):
 
 
 class UserListVocabularyOfTopicSerializers(serializers.ModelSerializer):
-    vocabularies = VocabularySerializers(many=True, read_only=True)
+    vocabularies = serializers.SerializerMethodField()
 
     class Meta:
         model = Topic
         fields = ['id', 'name', 'vocabularies']
 
-
+    def get_vocabularies(self, obj):
+        # Lấy tất cả từ vựng liên quan đến topic này và có is_deleted=False
+        active_vocabularies = Vocabulary.objects.filter(topic_id=obj, is_deleted=False)
+        # Trả về dữ liệu đã được serialize
+        return AdminVocabularySerializers(active_vocabularies, many=True).data
         
 class LearnVocabularySerializers(serializers.ModelSerializer):
     mini_exercises = serializers.SerializerMethodField()
@@ -225,11 +229,16 @@ class AdminVocabularySerializers(serializers.ModelSerializer):
         model = Vocabulary
         fields = ['id', 'word','meaning']   
 class AdminVocabularyOfTopicSerializers(serializers.ModelSerializer):
-    vocabularies = AdminVocabularySerializers(many=True)
+    vocabularies = serializers.SerializerMethodField()
     class Meta:
         model = Topic
         fields = ['id', 'name', 'vocabularies']
 
+    def get_vocabularies(self, obj):
+        # Lấy tất cả từ vựng liên quan đến topic này và có is_deleted=False
+        active_vocabularies = Vocabulary.objects.filter(topic_id=obj, is_deleted=False)
+        # Trả về dữ liệu đã được serialize
+        return AdminVocabularySerializers(active_vocabularies, many=True).data
     
 class AdminVocabularySerizlizers(serializers.ModelSerializer):
     topic_id = serializers.PrimaryKeyRelatedField(
