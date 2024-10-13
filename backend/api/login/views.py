@@ -105,8 +105,6 @@ class RegisterView(APIView):
 
                 refresh = RefreshToken.for_user(user)
                 profile, created = Profile.objects.get_or_create(user=user)
-                profile.last_login = datetime.now()  
-                profile.save()
                 tokens = {
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
