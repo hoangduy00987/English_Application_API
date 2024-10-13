@@ -135,10 +135,25 @@ class ListVocabularyProcessOfUserSerializers(serializers.ModelSerializer):
         vocabulary = Vocabulary.objects.get(word=obj)
         return vocabulary.word
 
+class VocabularySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vocabulary
+        fields = ['id', 'word', 'meaning']
 
-#==========ADMIN
+class VocabularyNeedReviewSerializer(serializers.ModelSerializer):
+    vocabularies = VocabularySerializer(source='vocabulary_id') 
+
+    class Meta:
+        model = UserVocabularyProcess
+        fields = ['id','vocabularies', 'last_learned_at', 'is_need_review']
+
+#==========ADMIN==========
 
 class AdminTopicSerializers(serializers.ModelSerializer):
+    name = serializers.CharField(required=False)
+    order = serializers.IntegerField(required=False)
+    image = serializers.ImageField(required=False)
+
     num_words = serializers.SerializerMethodField()
     class Meta:
         model = Topic
@@ -158,22 +173,23 @@ class AdminTopicSerializers(serializers.ModelSerializer):
     def update(self, request):
         try:
             topic_id = request.query_params.get('topic_id')
-            name = self.validated_data['name']
-            # order = self.validated_data['order']
-            image = self.validated_data['image']
-            is_public = self.validated_data['is_public']
+            validated_data = self.validated_data
             model = Topic.objects.get(pk=topic_id)
-            if not model.is_deleted:
-                model.name = name
-                # model.order = order
-                model.image = image
-                model.is_public=is_public
-                model.save()
-                return model
-            raise serializers.ValidationError("Topic has Been deleted")
+            if model.is_deleted:
+                raise serializers.ValidationError("Topic has been deleted.")
+            model.name = validated_data.get('name', model.name)
+            model.order = validated_data.get('order', model.order)
+            model.image = validated_data.get('image', model.image)
+            model.is_public = validated_data.get('is_public', model.is_public)
+            model.save()
+            return model
+        except serializers.ValidationError as ve:
+            print("TopicSerializers_update_validation_error: ", ve)
+            raise ve
         except Exception as error:
             print("TopicSerializers_update_error: ", error)
-            return None
+            raise serializers.ValidationError("An error occurred while updating the Topic.")
+
     
     def delete(self, request):
         try:
@@ -204,6 +220,14 @@ class AdminVocabularySerizlizers(serializers.ModelSerializer):
         queryset=Topic.objects.all(), 
         required=False
     )
+    word = serializers.CharField(required=False)
+    transcription = serializers.CharField(required=False)
+    meaning = serializers.CharField(required=False)
+    example = serializers.CharField(required=False)
+    word_image = serializers.ImageField(required=False)
+    pronunciation_audio = serializers.FileField(required=False)
+    pronunciation_video = serializers.FileField(required=False)
+    order = serializers.IntegerField(required=False)
     class Meta:
         model = Vocabulary
         fields = ['id','topic_id','word','transcription','meaning','example','word_image','pronunciation_audio','pronunciation_video','order']
@@ -237,30 +261,27 @@ class AdminVocabularySerizlizers(serializers.ModelSerializer):
     def update(self, request):
         try:
             vocabulary_id = request.query_params.get('vocabulary_id')
-            word = self.validated_data['word']
-            transcription = self.validated_data['transcription']
-            meaning = self.validated_data['meaning']
-            example = self.validated_data['example']
-            word_image = self.validated_data['word_image']
-            pronunciation_audio = self.validated_data['pronunciation_audio']
-            pronunciation_video = self.validated_data['pronunciation_video']
-            order = self.validated_data['order']
+            validated_data = self.validated_data
             model = Vocabulary.objects.get(pk=vocabulary_id)
-            if not model.is_deleted:
-                model.word = word
-                model.transcription = transcription
-                model.meaning=meaning
-                model.example = example
-                model.word_image = word_image
-                model.pronunciation_audio=pronunciation_audio
-                model.pronunciation_video = pronunciation_video
-                model.order=order
-                model.save()
-                return model
-            raise serializers.ValidationError("Vocabulary has Been deleted")
+            if model.is_deleted:
+                raise serializers.ValidationError("Vocabulary has been deleted.")
+            model.word = validated_data.get('word', model.word)
+            model.transcription = validated_data.get('transcription', model.transcription)
+            model.meaning = validated_data.get('meaning', model.meaning)
+            model.example = validated_data.get('example', model.example)
+            model.word_image = validated_data.get('word_image', model.word_image)
+            model.pronunciation_audio = validated_data.get('pronunciation_audio', model.pronunciation_audio)
+            model.pronunciation_video = validated_data.get('pronunciation_video', model.pronunciation_video)
+            model.order = validated_data.get('order', model.order)
+            model.save()
+
+            return model
+        except Vocabulary.DoesNotExist:
+            raise serializers.ValidationError("Vocabulary not found.")
         except Exception as error:
-            print("VocabularySerializers_update_error: ", error)
-            return None
+            print("VocabularySerializers_save_error: ", error)
+            raise serializers.ValidationError("An error occurred while updating the Vocabulary.")
+
     
     def delete(self, request):
         try:

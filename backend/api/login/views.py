@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
-
+from datetime import timezone
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework.response import Response
@@ -77,7 +77,8 @@ class GoogleView(APIView):
             user=user,created_at=datetime.now()
             )
             is_first_login = profile.is_first_login
-            
+        profile.last_login = datetime.now()  
+        profile.save()    
         # Create And Response token to user
         token = RefreshToken.for_user(user)
         response_data = {
@@ -104,6 +105,9 @@ class RegisterView(APIView):
                 user = serializer.save(request=request) 
 
                 refresh = RefreshToken.for_user(user)
+                profile, created = Profile.objects.get_or_create(user=user)
+                profile.last_login = datetime.now()  
+                profile.save()
                 tokens = {
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
@@ -125,7 +129,9 @@ class LoginView(APIView):
             if serializer.is_valid():
                 user = serializer.validated_data['user']
                 refresh = RefreshToken.for_user(user)
-
+                profile, created = Profile.objects.get_or_create(user=user)
+                profile.last_login = datetime.now()  
+                profile.save()
                 return Response(
                     {
                         'refresh': str(refresh),

@@ -46,12 +46,13 @@ class Vocabulary(models.Model):
 
 class UserVocabularyProcess(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    vocabulary_id = models.ForeignKey(Vocabulary,  on_delete=models.CASCADE)
+    vocabulary_id = models.ForeignKey(Vocabulary, related_name="vocab_processes", on_delete=models.CASCADE)
     learned_at = models.DateTimeField(null=True)
     review_count = models.IntegerField(null=True)
     next_review_at  =  models.DateTimeField(null=True)
-    completed_words = models.IntegerField(null=True)
     is_learned = models.BooleanField(null=True)
+    last_learned_at = models.DateTimeField(null=True)
+    is_need_review = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.vocabulary_id.word

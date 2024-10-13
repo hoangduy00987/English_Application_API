@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # BASE_DIR = Path(__file__).resolve().parent.parent
+from celery.schedules import crontab
 
 
 # Quick-start development settings - unsuitable for production
@@ -116,6 +117,12 @@ TEMPLATES = [
         },
     },
 ]
+CELERY_BEAT_SCHEDULE = {
+    'mark-vocabulary-for-review-every-hour': {
+        'task': 'api.vocabulary.tasks.mark_vocabulary_for_review',
+        'schedule': crontab(minute=0, hour='*'),  # chạy mỗi giờ
+    },
+}
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
