@@ -217,8 +217,28 @@ class UserListVocabularyViewSet(APIView):
             print('error: ', error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         
+
+class ReviewVocabularyViewSet(APIView):
+    serializer_class = VocabularyNeedReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            queryset = UserVocabularyProcess.objects.filter(user_id=request.user, is_need_review=True)
+
+            if not queryset.exists():
+                return Response({"detail": "No vocabulary found for review."}, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = self.serializer_class(queryset, many=True)
+        
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     
-#============Admin
+
+#============Admin==========
 class AdminManageTopicViewset(viewsets.ModelViewSet):
     serializer_class = AdminTopicSerializers
     pagination_class = HistoryLogPagination
@@ -264,7 +284,7 @@ class AdminManageTopicViewset(viewsets.ModelViewSet):
             print("error", error) 
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         
-    @action(methods="PUT", detail=False, url_path="admin_topic_update_by_id", url_name="admin_topic_update_by_id")
+    @action(methods="PATCH", detail=False, url_path="admin_topic_update_by_id", url_name="admin_topic_update_by_id")
     def admin_topic_update_by_id(self, request):
         try:
             serializer = self.serializer_class(data=request.data)
@@ -337,7 +357,7 @@ class AdminVocabularyViewSet(viewsets.ModelViewSet):
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         
     
-    @action(methods="PUT", detail=False, url_path="admin_vocabulary_update_by_id", url_name="admin_vocabulary_update_by_id")
+    @action(methods="PATCH", detail=False, url_path="admin_vocabulary_update_by_id", url_name="admin_vocabulary_update_by_id")
     def admin_vocabulary_update_by_id(self, request):
         try:
             serializer = self.serializer_class(data=request.data)
