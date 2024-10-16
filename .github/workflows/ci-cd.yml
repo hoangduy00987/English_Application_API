@@ -25,8 +25,11 @@ jobs:
       - name: Đăng nhập vào Docker
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: SSH to server
-        env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-        run: sshpass -p "$SSH_PASSWORD" ssh root@engina.duytech.site "cd English_Application_API && git pull origin dev && docker-compose up --build"
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
+      - name: Deploy to server
+        run: ssh -o StrictHostKeyChecking=no root@engina.duytech.site "cd English_Application_API/backend && git pull origin dev && docker-compose up --build"
