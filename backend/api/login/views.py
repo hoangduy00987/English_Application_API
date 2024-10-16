@@ -265,3 +265,7 @@ class PasswordResetConfirmView(APIView):
 class HelloWorld(APIView):
     def get(self, request):
         return Response({"message":"Hello World"})
+    
+class Success(APIView):
+    def get(self, request):
+        return Response({"message":"Chuc mung ban da thanh cong"})
