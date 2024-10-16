@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
+from django.utils import timezone
 
 
 class Topic(models.Model):
@@ -56,7 +57,11 @@ class UserVocabularyProcess(models.Model):
 
     def __str__(self) -> str:
         return self.vocabulary_id.word
-
+    def update_review_status(self):
+        if (timezone.now() - self.learned_at).total_seconds() >= 60:
+            self.is_need_review = True
+            self.save()
+    
 # Exercise type choices
 EXERCISE_TYPE = [
     ('T1', 'Fill in exercise'),
