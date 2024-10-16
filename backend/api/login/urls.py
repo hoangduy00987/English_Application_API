@@ -14,4 +14,5 @@ urlpatterns = [
     path('password_reset_confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('hello/', HelloWorld.as_view(), name='hello'),
+    path('success/', Success.as_view(), name='success'),
 ]
