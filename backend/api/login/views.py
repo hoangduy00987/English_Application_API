@@ -268,4 +268,4 @@ class HelloWorld(APIView):
     
 class Success(APIView):
     def get(self, request):
-        return Response({"message":"Chuc mung ban da thanh cong"})
+        return Response({"message":"Chuc mung ban da successfuly"})
