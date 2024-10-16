@@ -261,3 +261,7 @@ class PasswordResetConfirmView(APIView):
             #hello
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class HelloWorld(APIView):
+    def get(self, request):
+        return Response({"message":"Hello World"})
