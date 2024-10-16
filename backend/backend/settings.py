@@ -119,15 +119,15 @@ TEMPLATES = [
         },
     },
 ]
-CELERY_BEAT_SCHEDULE = {
-    'mark-vocabulary-for-review-every-hour': {
-        'task': 'api.vocabulary.tasks.mark_vocabulary_for_review',
-        'schedule': crontab(minute=0, hour='*'),  # chạy mỗi giờ
-    },
-}
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
+CELERY_BEAT_SCHEDULE = {
+    'update-review-status-every-minute': {
+        'task': 'api.vocabulary.tasks.update_review_status',
+        'schedule': crontab(minute='*'),  # Chạy mỗi phút
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
