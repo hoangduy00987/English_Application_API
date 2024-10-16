@@ -4,13 +4,10 @@ on:
   push:
     branches:
       - dev
-      - master
-      - develop
   pull_request:
     branches:
       - vocabulary
-      - master
-      - develop
+      - ci_cd
 
 jobs:
   build:
