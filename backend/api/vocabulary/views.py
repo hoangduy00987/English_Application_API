@@ -321,6 +321,8 @@ class AdminListVocabularyViewSet(viewsets.ModelViewSet):
             topic = Topic.objects.get(id=topic_id,is_deleted=False)
             serializer = self.serializer_class(topic, context={'request':request})
             return Response(serializer.data, status=status.HTTP_200_OK)
+        except Topic.DoesNotExist:
+            return Response({"message": "Topic not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print('error: ', error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
@@ -379,4 +381,159 @@ class AdminVocabularyViewSet(viewsets.ModelViewSet):
             return Response({"message": "Vocabulary  deleted successfully"}, status=status.HTTP_200_OK)  
         except Exception as error:
             print("error", error) 
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+class AdminMiniExerciseViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminMiniExerciseSerializers
+    permission_classes = [IsAdminUser]
+    pagination_class = HistoryLogPagination
+
+    @action(methods=["GET"], detail=False, url_path="admin_get_all_fill_in_exercises", url_name="admin_get_all_fill_in_exercises")
+    def admin_get_all_fill_in_exercises(self, request):
+        try:
+            queryset = MiniExercise.objects.filter(exercise_type="T1", is_deleted=False).order_by('id')
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("admin_get_all_fill_in_exercises_error:", error)
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(methods=["GET"], detail=False, url_path="admin_get_all_multiple_choice_exercises", url_name="admin_get_all_multiple_choice_exercises")
+    def admin_get_all_multiple_choice_exercises(self, request):
+        try:
+            queryset = MiniExercise.objects.filter(exercise_type="T2", is_deleted=False).order_by('id')
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("admin_get_all_fill_in_exercises_error:", error)
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Fill in exercise ===========
+class AdminFillinAnswerExerciseViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminFillinAnswerExerciseSerializers
+    permission_classes = [IsAdminUser]
+
+    @action(methods=["GET"], detail=True, url_path="admin_get_fill_in_exercise_by_id", url_name="admin_get_fill_in_exercise_by_id")
+    def admin_get_fill_in_exercise_by_id(self, request):
+        try:
+            exercise_id = request.query_params.get('exercise_id')
+            exercise = MiniExercise.objects.get(id=exercise_id, exercise_type="T1", is_deleted=False)
+            serializer = self.serializer_class(exercise, context={'request':request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except MiniExercise.DoesNotExist:
+            return Response({"error": "Fill in exercise not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as error:
+            print("admin_get_fill_in_exercise_by_id_error:", error)
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminManageFillinExerciseViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminManageFillinExerciseSerializers
+    permission_classes = [IsAdminUser]
+
+    @action(methods=["POST"], detail=False, url_path="admin_fill_in_exercise_add", url_name="admin_fill_in_exercise_add")
+    def admin_fill_in_exercise_add(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                serializer.save(request)
+                return Response({"message": "Add fill in exercise successfully."}, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("admin_fill_in_exercise_add_error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=["PATCH"], detail=False, url_path="admin_fill_in_exercise_update_by_id", url_name="admin_fill_in_exercise_update_by_id")
+    def admin_fill_in_exercise_update_by_id(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                updated_model = serializer.update(request)
+                if updated_model is None:
+                    return Response({"message": "Fill in exercise not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message": "Update fill in exercise successfully."}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("admin_fill_in_exercise_update_by_id_error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(methods=["DELETE"], detail=False, url_path="admin_fill_in_exercise_delete_by_id", url_name="admin_fill_in_exercise_delete_by_id")
+    def admin_fill_in_exercise_delete_by_id(self, request):
+        try:
+            queryset = self.serializer_class()
+            delete_model = queryset.delete(request)
+            if delete_model is None:
+                return Response({"message": "Fill in exercise not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Delete fill in exercise successfully."}, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("admin_fill_in_exercise_delete_by_id_error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Multiple choices exercise =============
+class AdminMultipleChoicesAnswerExerciseViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminMultipleChoicesAnswerExerciseSerializers
+    permission_classes = [IsAdminUser]
+
+    @action(methods=["GET"], detail=True, url_path="admin_get_multiple_choices_exercise_by_id", url_name="admin_get_multiple_choices_exercise_by_id")
+    def admin_get_multiple_choices_exercise_by_id(self, request):
+        try:
+            exercise_id = request.query_params.get('exercise_id')
+            exercise = MiniExercise.objects.get(id=exercise_id, exercise_type="T2", is_deleted=False)
+            serializer = self.serializer_class(exercise, context={'request':request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except MiniExercise.DoesNotExist:
+            return Response({"error": "Multiple choices exercise not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as error:
+            print("admin_get_multiple_choices_exercise_by_id_error:", error)
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminManageMultipleChoicesExerciseViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminManageMultipleChoicesExerciseSerializers
+    permission_classes = [IsAdminUser]
+
+    @action(methods=["POST"], detail=False, url_path="admin_multiple_choices_exercise_add", url_name="admin_multiple_choices_exercise_add")
+    def admin_multiple_choices_exercise_add(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                serializer.save(request)
+                return Response({"message": "Add multiple choices exercise successfully."}, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("admin_multiple_choices_exercise_add_error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=["PATCH"], detail=False, url_path="admin_multiple_choices_exercise_update_by_id", url_name="admin_multiple_choices_exercise_update_by_id")
+    def admin_multiple_choices_exercise_update_by_id(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                updated_model = serializer.update(request)
+                if updated_model is None:
+                    return Response({"message": "Multiple choices exercise not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message": "Update multiple choices exercise successfully."}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("admin_multiple_choices_exercise_update_by_id_error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(methods=["DELETE"], detail=False, url_path="admin_multiple_choices_exercise_delete_by_id", url_name="admin_multiple_choices_exercise_delete_by_id")
+    def admin_multiple_choices_exercise_delete_by_id(self, request):
+        try:
+            queryset = self.serializer_class()
+            delete_model = queryset.delete(request)
+            if delete_model is None:
+                return Response({"message": "Multiple choices exercise not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Delete multiple choices exercise successfully."}, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("admin_multiple_choices_exercise_delete_by_id_error:", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)

@@ -52,6 +52,37 @@ set_next_review = UserVocabularyProcessViewSet.as_view(
 user_vocab_process = UserVocabularyProcessViewSet.as_view(
     {'get':'user_vocab_process'}
 )
+#MiniExercise
+admin_get_all_fill_in_exercises = AdminMiniExerciseViewSet.as_view(
+    {'get':'admin_get_all_fill_in_exercises'}
+)
+admin_get_fill_in_exercise_by_id = AdminFillinAnswerExerciseViewSet.as_view(
+    {'get':'admin_get_fill_in_exercise_by_id'}
+)
+admin_fill_in_exercise_add = AdminManageFillinExerciseViewSet.as_view(
+    {'post':'admin_fill_in_exercise_add'}
+)
+admin_fill_in_exercise_update_by_id = AdminManageFillinExerciseViewSet.as_view(
+    {'patch':'admin_fill_in_exercise_update_by_id'}
+)
+admin_fill_in_exercise_delete_by_id = AdminManageFillinExerciseViewSet.as_view(
+    {'delete':'admin_fill_in_exercise_delete_by_id'}
+)
+admin_get_all_multiple_choice_exercises = AdminMiniExerciseViewSet.as_view(
+    {'get':'admin_get_all_multiple_choice_exercises'}
+)
+admin_get_multiple_choices_exercise_by_id = AdminMultipleChoicesAnswerExerciseViewSet.as_view(
+    {'get':'admin_get_multiple_choices_exercise_by_id'}
+)
+admin_multiple_choices_exercise_add = AdminManageMultipleChoicesExerciseViewSet.as_view(
+    {'post':'admin_multiple_choices_exercise_add'}
+)
+admin_multiple_choices_exercise_update_by_id = AdminManageMultipleChoicesExerciseViewSet.as_view(
+    {'patch':'admin_multiple_choices_exercise_update_by_id'}
+)
+admin_multiple_choices_exercise_delete_by_id = AdminManageMultipleChoicesExerciseViewSet.as_view(
+    {'delete':'admin_multiple_choices_exercise_delete_by_id'}
+)
 
 urlpatterns = [
     # Topic
@@ -76,4 +107,15 @@ urlpatterns = [
     path('admin_vocabulary_get_all/', admin_vocabulary_get_all),
     path('admin_vocabulary_get_by_id/', admin_vocabulary_get_by_id),
     
+    #Admin MiniExercise
+    path('admin_get_all_fill_in_exercises/', admin_get_all_fill_in_exercises),
+    path('admin_get_fill_in_exercise_by_id/', admin_get_fill_in_exercise_by_id),
+    path('admin_fill_in_exercise_add/', admin_fill_in_exercise_add),
+    path('admin_fill_in_exercise_update_by_id/', admin_fill_in_exercise_update_by_id),
+    path('admin_fill_in_exercise_delete_by_id/', admin_fill_in_exercise_delete_by_id),
+    path('admin_get_all_multiple_choice_exercises/', admin_get_all_multiple_choice_exercises),
+    path('admin_get_multiple_choices_exercise_by_id/', admin_get_multiple_choices_exercise_by_id),
+    path('admin_multiple_choices_exercise_add/', admin_multiple_choices_exercise_add),
+    path('admin_multiple_choices_exercise_update_by_id/', admin_multiple_choices_exercise_update_by_id),
+    path('admin_multiple_choices_exercise_delete_by_id/', admin_multiple_choices_exercise_delete_by_id),
 ]

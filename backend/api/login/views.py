@@ -5,21 +5,16 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.hashers import make_password
 from rest_framework.views import APIView
-from rest_framework.response import Response
 import requests
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 from ..submodels.models_user import *
-from rest_framework.views import APIView
-from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timezone
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from rest_framework.response import Response
-from rest_framework import status
 
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = TokenRefreshSerializer
@@ -268,4 +263,4 @@ class HelloWorld(APIView):
     
 class Success(APIView):
     def get(self, request):
-        return Response({"message":"Chuc mung ban da successfuly"})
+        return Response({"message":"Chuc mung ban da successfuly manage exercise"})
