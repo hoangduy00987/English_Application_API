@@ -86,7 +86,7 @@ class LearnVocabularySerializers(serializers.ModelSerializer):
         fields = ['id','word','transcription','meaning','example','word_image','pronunciation_audio','pronunciation_video','mini_exercises']
 
     def get_mini_exercises(self, obj):
-        mini_exercises = MiniExercise.objects.filter(vocabulary_id=obj).order_by('?')[:2]
+        mini_exercises = MiniExercise.objects.filter(vocabulary_id=obj, is_deleted=False).order_by('id')
         return MiniExerciseSerializers(mini_exercises, many=True).data
 
     
@@ -319,4 +319,217 @@ class AdminVocabularySerizlizers(serializers.ModelSerializer):
             raise serializers.ValidationError("Vocabulary has been deleted")
         except Exception as error:
             print("VocabuarySerializers_delete_error: ", error)
+            return None
+        
+
+# ==== Mini Exercise ====
+class AdminMiniExerciseSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = MiniExercise
+        fields = ['id', 'vocabulary_id', 'exercise_type', 'content']
+
+
+# Fill in exercise =====================
+class AdminFillinAnswerExerciseSerializers(serializers.ModelSerializer):
+    vocabulary = serializers.SerializerMethodField()
+    answers = serializers.SerializerMethodField()
+    class Meta:
+        model = MiniExercise
+        fields = ['id', 'vocabulary', 'exercise_type', 'content', 'answers']
+
+    def get_vocabulary(self, obj):
+        return obj.vocabulary_id.word
+    
+    def get_answers(self, obj):
+        if obj.exercise_type == "T1":
+            answers = MiniExerciseFillinAnswer.objects.filter(exercise_id=obj)
+            return MiniExerciseFillinAnswerSerializers(answers, many=True).data
+        return None
+        
+
+class AdminManageAnswerFillinExerciseSerializers(serializers.ModelSerializer):
+    correct_answer = serializers.CharField(required=True)
+    available_answers = serializers.CharField(required=True)
+
+    class Meta:
+        model = MiniExerciseFillinAnswer
+        fields = ['correct_answer','available_answers']
+
+
+class AdminManageFillinExerciseSerializers(serializers.ModelSerializer):
+    vocabulary_id = serializers.IntegerField(required=True)
+    content = serializers.CharField(required=True)
+    answer = AdminManageAnswerFillinExerciseSerializers()
+
+    class Meta:
+        model = MiniExercise
+        fields = ['id','vocabulary_id','content','answer']
+
+    def save(self, request):
+        try:
+            vocabulary_id = self.validated_data['vocabulary_id']
+            content = self.validated_data['content']
+            answer = self.validated_data.pop('answer')
+            vocabulary = Vocabulary.objects.get(id=vocabulary_id, is_deleted=False)
+            exercise = MiniExercise.objects.create(
+                vocabulary_id=vocabulary,
+                exercise_type="T1",
+                content=content
+            )
+            MiniExerciseFillinAnswer.objects.create(
+                exercise_id=exercise,
+                **answer
+            )
+            return exercise
+        except Vocabulary.DoesNotExist:
+            raise serializers.ValidationError({"error": "Vocabulary not found."})
+        except Exception as error:
+            print("AdminManageFillinExerciseSerializers_error:", error)
+            return None
+        
+    def update(self, request):
+        try:
+            exercise_id = request.query_params.get('exercise_id')
+            validated_data = self.validated_data
+            answer = validated_data.pop('answer')
+            model = MiniExercise.objects.get(pk=exercise_id)
+            if model.is_deleted:
+                raise serializers.ValidationError({"error": "This fill in exercise was deleted."})
+            vocabulary_id = validated_data.get('vocabulary_id', model.vocabulary_id.id)
+            vocabulary = Vocabulary.objects.get(id=vocabulary_id, is_deleted=False)
+            model.vocabulary_id = vocabulary
+            model.content = validated_data.get('content', model.content)
+            model.save()
+            answer_model = MiniExerciseFillinAnswer.objects.get(exercise_id=model)
+            answer_model.correct_answer = answer.get('correct_answer', answer_model.correct_answer)
+            answer_model.available_answers = answer.get('available_answers', answer_model.available_answers)
+            answer_model.save()
+            return model
+        except MiniExercise.DoesNotExist:
+            raise serializers.ValidationError({"error": "Fill in exercise not found."})
+        except Vocabulary.DoesNotExist:
+            raise serializers.ValidationError({"error": "Vocabulary not found"})
+        except Exception as error:
+            print("update_fill_in_exercise_error:", error)
+            return None
+        
+    def delete(self, request):
+        try:
+            exercise_id = request.query_params.get('exercise_id')
+            exercise = MiniExercise.objects.get(pk=exercise_id)
+            if not exercise.is_deleted:
+                exercise.is_deleted = True
+                exercise.save()
+                return exercise
+            raise serializers.ValidationError({"error": "This fill in exercise is already deleted."})
+        except MiniExercise.DoesNotExist:
+            raise serializers.ValidationError({"error": "Fill in exercise not found."})
+        except Exception as error:
+            print("delete_fill_in_exercise_error:", error)
+            return None
+
+
+# Multiple choices exercise ==============
+class AdminMultipleChoicesAnswerExerciseSerializers(serializers.ModelSerializer):
+    vocabulary = serializers.SerializerMethodField()
+    answers = serializers.SerializerMethodField()
+    class Meta:
+        model = MiniExercise
+        fields = ['id', 'vocabulary', 'exercise_type', 'content', 'answers']
+
+    def get_vocabulary(self, obj):
+        return obj.vocabulary_id.word
+    
+    def get_answers(self, obj):
+        if obj.exercise_type == "T2":
+            answers = MiniExerciseMultipleChoicesAnswer.objects.filter(exercise_id=obj)
+            return MiniExerciseMultipleChoicesAnswerSerializers(answers, many=True).data
+        return None
+        
+
+class AdminManageAnswerMultipleChoicesExerciseSerializers(serializers.ModelSerializer):
+    answer = serializers.CharField(required=True)
+    is_correct = serializers.BooleanField(required=True)
+
+    class Meta:
+        model = MiniExerciseFillinAnswer
+        fields = ['answer','is_correct']
+
+
+class AdminManageMultipleChoicesExerciseSerializers(serializers.ModelSerializer):
+    vocabulary_id = serializers.IntegerField(required=True)
+    content = serializers.CharField(required=True)
+    answers = AdminManageAnswerMultipleChoicesExerciseSerializers(many=True)
+
+    class Meta:
+        model = MiniExercise
+        fields = ['id','vocabulary_id','content','answers']
+
+    def save(self, request):
+        try:
+            vocabulary_id = self.validated_data['vocabulary_id']
+            content = self.validated_data['content']
+            answers_data = self.validated_data.pop('answers')
+            vocabulary = Vocabulary.objects.get(id=vocabulary_id, is_deleted=False)
+            exercise = MiniExercise.objects.create(
+                vocabulary_id=vocabulary,
+                exercise_type="T2",
+                content=content
+            )
+            answers = [
+                MiniExerciseMultipleChoicesAnswer(
+                    exercise_id=exercise,
+                    **answer_data
+                )
+                for answer_data in answers_data
+            ]
+            MiniExerciseMultipleChoicesAnswer.objects.bulk_create(answers)
+            return exercise
+        except Vocabulary.DoesNotExist:
+            raise serializers.ValidationError({"error": "Vocabulary not found."})
+        except Exception as error:
+            print("add_multiple_choices_exercise_error:", error)
+            return None
+        
+    def update(self, request):
+        try:
+            exercise_id = request.query_params.get('exercise_id')
+            validated_data = self.validated_data
+            answers_data = validated_data.pop('answers')
+            model = MiniExercise.objects.get(pk=exercise_id)
+            if model.is_deleted:
+                raise serializers.ValidationError({"error": "This multiple choices exercise was deleted."})
+            vocabulary_id = validated_data.get('vocabulary_id', model.vocabulary_id.id)
+            vocabulary = Vocabulary.objects.get(id=vocabulary_id, is_deleted=False)
+            model.vocabulary_id = vocabulary
+            model.content = validated_data.get('content', model.content)
+            model.save()
+            answers_model = list(MiniExerciseMultipleChoicesAnswer.objects.filter(exercise_id=model)[:4])
+            for i, answer_data in enumerate(answers_data):
+                answers_model[i].answer = answer_data.get('answer', answers_model[i].answer)
+                answers_model[i].is_correct = answer_data.get('is_correct', answers_model[i].is_correct)
+            
+            MiniExerciseMultipleChoicesAnswer.objects.bulk_update(answers_model, ['answer', 'is_correct'])
+            return model
+        except MiniExercise.DoesNotExist:
+            raise serializers.ValidationError({"error": "Multiple choices exercise not found."})
+        except Vocabulary.DoesNotExist:
+            raise serializers.ValidationError({"error": "Vocabulary not found"})
+        except Exception as error:
+            print("update_multiple_choices_exercise_error:", error)
+            return None
+        
+    def delete(self, request):
+        try:
+            exercise_id = request.query_params.get('exercise_id')
+            exercise = MiniExercise.objects.get(pk=exercise_id)
+            if not exercise.is_deleted:
+                exercise.is_deleted = True
+                exercise.save()
+                return exercise
+            raise serializers.ValidationError({"error": "This multiple choices exercise is already deleted."})
+        except MiniExercise.DoesNotExist:
+            raise serializers.ValidationError({"error": "Multiple choices exercise not found."})
+        except Exception as error:
+            print("delete_multiple_choices_exercise_error:", error)
             return None
