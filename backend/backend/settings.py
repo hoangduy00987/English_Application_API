@@ -122,12 +122,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-CELERY_BEAT_SCHEDULE = {
-    'update-review-status-every-minute': {
-        'task': 'api.vocabulary.tasks.update_review_status',
-        'schedule': crontab(minute='*'),  # Chạy mỗi phút
-    },
-}
+
+
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
