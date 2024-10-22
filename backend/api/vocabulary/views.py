@@ -329,7 +329,7 @@ class AdminListVocabularyViewSet(viewsets.ModelViewSet):
 
 
 class AdminVocabularyViewSet(viewsets.ModelViewSet):
-    serializer_class = AdminVocabularySerizlizers
+    serializer_class = AdminVocabularySerializers
     permission_classes = [IsAdminUser]  
     @action(methods='GET', detail=True, url_path="admin_vocabulary_get_by_id", url_name="admin_vocabulary_get_by_id")
     def admin_vocabulary_get_by_id(self, request):
@@ -350,12 +350,14 @@ class AdminVocabularyViewSet(viewsets.ModelViewSet):
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
                 serializer.save(request=request)
-                return Response({"message":"vocabulary added successfuly"}, status=status.HTTP_201_CREATED)
+                return Response({"message": "Vocabulary added successfully"}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except serializers.ValidationError as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
-            print("error", error) 
+            print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
     
     @action(methods="PATCH", detail=False, url_path="admin_vocabulary_update_by_id", url_name="admin_vocabulary_update_by_id")
     def admin_vocabulary_update_by_id(self, request):
