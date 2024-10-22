@@ -7,13 +7,14 @@ from django.contrib.auth.hashers import make_password
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 import requests
+from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 from ..submodels.models_user import *
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
-from datetime import timezone
+from django.utils import timezone
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
@@ -66,7 +67,10 @@ class GoogleView(APIView):
         user, created = User.objects.get_or_create(email=email, defaults={
             'username': email,
             'password': make_password(BaseUserManager().make_random_password()),
+
         })
+        user.last_login = timezone.now()
+        user.save()
         is_first_login = False
         if created:
             profile = Profile.objects.create(
@@ -121,6 +125,7 @@ class LoginView(APIView):
             serializer = LoginSerializers(data=request.data)
             if serializer.is_valid():
                 user = serializer.validated_data['user']
+                
                 refresh = RefreshToken.for_user(user)
                 profile, created = Profile.objects.get_or_create(user=user)
                 return Response(

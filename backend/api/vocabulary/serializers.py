@@ -240,48 +240,69 @@ class AdminVocabularyOfTopicSerializers(serializers.ModelSerializer):
         # Trả về dữ liệu đã được serialize
         return AdminVocabularySerializers(active_vocabularies, many=True).data
     
-class AdminVocabularySerizlizers(serializers.ModelSerializer):
-    topic_id = serializers.PrimaryKeyRelatedField(
-        queryset=Topic.objects.all(), 
-        required=False
-    )
-    word = serializers.CharField(required=False)
-    transcription = serializers.CharField(required=False)
-    meaning = serializers.CharField(required=False)
-    example = serializers.CharField(required=False)
-    word_image = serializers.ImageField(required=False)
-    pronunciation_audio = serializers.FileField(required=False)
-    pronunciation_video = serializers.FileField(required=False)
-    order = serializers.IntegerField(required=False)
+class AdminVocabularySerializers(serializers.ModelSerializer):
+    topic_id = serializers.PrimaryKeyRelatedField(queryset=Topic.objects.all(), required=False)
+    # words = serializers.ListField(child=serializers.DictField(), required=True) 
+
     class Meta:
         model = Vocabulary
         fields = ['id','topic_id','word','transcription','meaning','example','word_image','pronunciation_audio','pronunciation_video','order']
 
     def save(self, request):
         try:
-            topic_id = self.validated_data['topic_id']
-            word = self.validated_data['word']
-            transcription = self.validated_data['transcription']
-            meaning = self.validated_data['meaning']
-            example = self.validated_data['example']
-            word_image = self.validated_data['word_image']
-            pronunciation_audio = self.validated_data['pronunciation_audio']
-            pronunciation_video = self.validated_data['pronunciation_video']
-            order = self.validated_data['order']
-            return Vocabulary.objects.create(
-                topic_id=topic_id,
-                word=word,
-                transcription=transcription, 
-                meaning=meaning, 
-                example=example, 
-                word_image=word_image, 
-                pronunciation_audio=pronunciation_audio, 
-                pronunciation_video=pronunciation_video, 
-                order=order, 
-                created_at=datetime.now())
+            validated_data = self.validated_data
+            print("Validated data: ", validated_data)
+            topic_id = validated_data.get('topic_id')
+            words_data = validated_data.get('words', [])
+            print("Words data: ", words_data)
+            vocabularies = []
+
+            for word_data in words_data:
+                vocabulary_id = word_data.get('vocabulary_id')
+                word = word_data.get('word')
+                transcription = word_data.get('transcription')
+                meaning = word_data.get('meaning')
+                example = word_data.get('example')
+                word_image = word_data.get('word_image')
+                pronunciation_audio = word_data.get('pronunciation_audio')
+                pronunciation_video = word_data.get('pronunciation_video')
+                order = word_data.get('order')
+                if vocabulary_id: 
+                    try:
+                        vocabulary = Vocabulary.objects.get(id=vocabulary_id, topic_id=topic_id)
+                        vocabulary.word = word
+                        vocabulary.transcription = transcription
+                        vocabulary.meaning = meaning
+                        vocabulary.example = example
+                        vocabulary.word_image = word_image
+                        vocabulary.pronunciation_audio = pronunciation_audio
+                        vocabulary.pronunciation_video = pronunciation_video
+                        vocabulary.updated_at = timezone.now()
+                        vocabulary.order = order
+                        vocabulary.save()
+                        vocabularies.append(vocabulary) 
+                    except Vocabulary.DoesNotExist:
+                        continue  
+                else: 
+                    vocabulary = Vocabulary.objects.create(
+                        topic_id=topic_id,
+                        word=word,
+                        transcription=transcription, 
+                        meaning=meaning, 
+                        example=example, 
+                        word_image=word_image, 
+                        pronunciation_audio=pronunciation_audio, 
+                        pronunciation_video=pronunciation_video, 
+                        created_at=timezone.now(),
+                        updated_at=timezone.now()
+                    )
+                    vocabularies.append(vocabulary)  # Thêm vào danh sách từ vựng mới
+
+            return vocabularies  # Trả về danh sách từ vựng đã thêm hoặc cập nhật
         except Exception as error:
             print("VocabularySerializers_save_error: ", error)
             return None
+
         
     def update(self, request):
         try:

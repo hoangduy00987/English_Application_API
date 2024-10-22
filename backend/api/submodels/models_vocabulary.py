@@ -39,7 +39,7 @@ class Vocabulary(models.Model):
     created_at = models.DateTimeField(null=True,blank=True)
     updated_at = models.DateTimeField(null=True,blank=True)
     is_deleted = models.BooleanField(default=False)
-    order = models.PositiveIntegerField(default=1,unique=True)
+    order = models.PositiveIntegerField(default=1,unique=True,null=True,blank=True)
 
     def __str__(self) -> str:
         return self.word
@@ -50,6 +50,7 @@ class UserVocabularyProcess(models.Model):
     vocabulary_id = models.ForeignKey(Vocabulary, related_name="vocab_processes", on_delete=models.CASCADE)
     learned_at = models.DateTimeField(null=True)
     review_count = models.IntegerField(null=True)
+    point = models.IntegerField(null=True,blank=True)
     next_review_at  =  models.DateTimeField(null=True)
     is_learned = models.BooleanField(null=True)
     last_learned_at = models.DateTimeField(null=True)
