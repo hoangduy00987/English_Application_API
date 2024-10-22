@@ -25,3 +25,11 @@ class PasswordResetToken(models.Model):
 
     def __str__(self):
         return f'{self.uid} - {self.token}'
+    
+class UserActivity(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_w_activity')
+    last_activity = models.DateTimeField(auto_now=True)
+    expo_push_token = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return self.user.email + " Last activity: " + str(self.last_activity)
