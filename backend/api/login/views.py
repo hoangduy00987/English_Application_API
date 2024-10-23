@@ -5,6 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.hashers import make_password
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
 import requests
 from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
@@ -269,3 +270,17 @@ class HelloWorld(APIView):
 class Success(APIView):
     def get(self, request):
         return Response({"message":"Chuc mung ban da successfuly manage exercise"})
+    
+
+# Update push token view
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_push_token(request):
+    token = request.data.get('push_token')
+    if token:
+        UserActivity.objects.update_or_create(
+            user=request.user,
+            defaults={'expo_push_token': token}
+        )
+        return Response({"message": "Push token updated."})
+    return Response({"error": "No push token provided."}, status=status.HTTP_400_BAD_REQUEST)

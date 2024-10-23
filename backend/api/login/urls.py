@@ -15,4 +15,5 @@ urlpatterns = [
     path('refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('hello/', HelloWorld.as_view(), name='hello'),
     path('success/', Success.as_view(), name='success'),
+    path('update_push_token/', update_push_token, name='update_push_token'),
 ]

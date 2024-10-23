@@ -4,6 +4,7 @@ from .submodels.models_vocabulary import *
 # Register your models here.
 admin.site.register(Profile)
 admin.site.register(PasswordResetToken)
+admin.site.register(UserActivity)
 admin.site.register(Topic)
 admin.site.register(Vocabulary)
 admin.site.register(UserVocabularyProcess)
