@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_celery_beat',
 ]
-
+########
 MIDDLEWARE = [
    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
