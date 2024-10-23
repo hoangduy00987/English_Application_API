@@ -242,11 +242,11 @@ class AdminVocabularyOfTopicSerializers(serializers.ModelSerializer):
     
 class AdminVocabularySerializers(serializers.ModelSerializer):
     topic_id = serializers.PrimaryKeyRelatedField(queryset=Topic.objects.all(), required=False)
-    words = serializers.ListField(child=serializers.DictField(), required=True) 
+    # words = serializers.ListField(child=serializers.DictField(), required=True) 
 
     class Meta:
         model = Vocabulary
-        fields = ['id', 'topic_id', 'words']  
+        fields = ['id','topic_id','word','transcription','meaning','example','word_image','pronunciation_audio','pronunciation_video','order']
 
     def save(self, request):
         try:
