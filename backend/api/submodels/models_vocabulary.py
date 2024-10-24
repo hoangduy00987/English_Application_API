@@ -39,7 +39,7 @@ class Vocabulary(models.Model):
     created_at = models.DateTimeField(null=True,blank=True)
     updated_at = models.DateTimeField(null=True,blank=True)
     is_deleted = models.BooleanField(default=False)
-    order = models.PositiveIntegerField(default=1,unique=True,null=True,blank=True)
+    order = models.PositiveIntegerField(null=True,blank=True)
 
     def __str__(self) -> str:
         return self.word
