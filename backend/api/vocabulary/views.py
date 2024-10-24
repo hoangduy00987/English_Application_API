@@ -350,7 +350,7 @@ class AdminVocabularyViewSet(viewsets.ModelViewSet):
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
                 serializer.save(request=request)
-                return Response({"message": "Vocabulary added successfully"}, status=status.HTTP_201_CREATED)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except serializers.ValidationError as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
