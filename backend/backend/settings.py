@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG =  os.getenv('DEBUG')
+DEBUG = os.getenv('DEBUG') == 'True'
 
 allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = allowed_hosts_str.split(',')
@@ -80,6 +80,8 @@ CORS_ALLOWED_ORIGINS = [
    'http://18.142.230.37', 
    'http://localhost:3010', 
    'http://localhost:8081',
+   'http://localhost:19006',
+   'http://localhost:19000',
 ]
 ROOT_URLCONF = 'backend.urls'
 CORS_ALLOW_HEADERS = [
