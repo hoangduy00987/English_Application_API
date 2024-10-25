@@ -20,7 +20,7 @@ services:
     volumes:
       - ./backend:/app
     ports:
-      - "8000:800"
+      - "8000:8000"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
