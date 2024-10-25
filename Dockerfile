@@ -15,6 +15,7 @@ COPY backend/ ./
 
 # Sao chép tệp .env vào thư mục làm việc
 COPY .env /app/.env
+RUN echo $SECRET_KEY
 
 # Chạy lệnh collectstatic
 RUN python manage.py collectstatic --noinput
