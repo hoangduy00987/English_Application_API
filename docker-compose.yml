@@ -19,7 +19,7 @@ services:
     volumes:
       - ./backend:/app
     expose:
-      - "8000"  # Sử dụng expose để mở cổng trong mạng Docker
+      - "8001:8000"  # Sử dụng expose để mở cổng trong mạng Docker
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
