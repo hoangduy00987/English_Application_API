@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_celery_beat',
 ]
-
+########
 MIDDLEWARE = [
    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -157,6 +157,7 @@ DATABASES = {
         'USER': os.environ.get('POSTGRES_USER'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
         'HOST': os.environ.get('DB_HOST'),  # địa chỉ máy chủ cơ sở dữ liệu
+        # 'HOST':'localhost',
         'PORT': os.environ.get('DB_PORT'),  # cổng cơ sở dữ liệu
     }
 }
