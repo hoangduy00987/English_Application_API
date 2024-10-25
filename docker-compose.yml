@@ -36,7 +36,7 @@ services:
       - ./backend/staticfiles:/staticfiles  # Đảm bảo thư mục staticfiles đã được tạo và ánh xạ
       - ./nginx.conf:/etc/nginx/nginx.conf  # Gắn tệp cấu hình Nginx
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - web
 
