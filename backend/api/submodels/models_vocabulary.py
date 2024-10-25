@@ -10,8 +10,8 @@ class Topic(models.Model):
     is_locked = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
-    created_at = models.DateTimeField(null=True,blank=True)
-    updated_at = models.DateTimeField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
     order = models.IntegerField(null=True, blank=False, unique=True)
     times_studied = models.IntegerField(null=True)
     
@@ -36,8 +36,8 @@ class Vocabulary(models.Model):
     word_image = models.ImageField(upload_to='word_images/', blank=True, null=True)
     pronunciation_audio = models.FileField(upload_to='audio_pronun_files/', blank=True, null=True)
     pronunciation_video = models.FileField(upload_to='video_pronun_files/', blank=True, null=True)
-    created_at = models.DateTimeField(null=True,blank=True)
-    updated_at = models.DateTimeField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
     is_deleted = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=1,unique=True,null=True,blank=True)
 

@@ -10,6 +10,6 @@ class UpdateUserActivityMiddleware:
         if request.user.is_authenticated:
             UserActivity.objects.update_or_create(
                 user=request.user,
-                defaults={'last_activity': timezone.now()}
+                defaults={'last_activity': timezone.localtime(timezone.now())}
             )
         return response
