@@ -9,8 +9,12 @@ WORKDIR /app
 # Cài đặt các dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+
 # Sao chép mã nguồn vào thư mục làm việc
 COPY backend/ ./
+
+# Sao chép tệp .env vào thư mục làm việc
+COPY .env /app/.env
 
 # Chạy lệnh collectstatic
 RUN python manage.py collectstatic --noinput
