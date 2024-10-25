@@ -10,15 +10,8 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Sao chép mã nguồn vào thư mục làm việc
-COPY backend/ ./
-
-# Sao chép tệp .env vào thư mục làm việc
-COPY .env /app/.env
-RUN echo $SECRET_KEY
-
-# Chạy lệnh collectstatic
-RUN python manage.py collectstatic --noinput
+# Sao chép toàn bộ mã nguồn vào container
+COPY ./backend /app/
 
 # Chạy lệnh khởi động server bằng Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8001", "backend.wsgi:application"]
