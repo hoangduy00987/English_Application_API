@@ -34,5 +34,3 @@ jobs:
 
       - name: Deploy to server
         run: ssh -o StrictHostKeyChecking=no root@engina.duytech.site "cd English_Application_API/backend && git pull origin dev && cd .. && docker-compose up --build -d"
-
-RUN python manage.py collectstatic --noinput
