@@ -249,10 +249,9 @@ class AdminVocabularySerializers(serializers.ModelSerializer):
     word_image = serializers.ImageField(required=False)
     pronunciation_audio = serializers.FileField(required=False)
     pronunciation_video = serializers.FileField(required=False)
-    order = serializers.IntegerField(required=False)
     class Meta:
         model = Vocabulary
-        fields = ['id','topic_id','word','transcription','meaning','example','word_image','pronunciation_audio','pronunciation_video','order']
+        fields = ['id','topic_id','word','transcription','meaning','example','word_image','pronunciation_audio','pronunciation_video']
     
     def save(self, request):
         try:
@@ -266,7 +265,6 @@ class AdminVocabularySerializers(serializers.ModelSerializer):
             word_image = validated_data.get('word_image')
             pronunciation_audio = validated_data.get('pronunciation_audio')
             pronunciation_video = validated_data.get('pronunciation_video')
-            order = validated_data.get('order')
             vocabulary = Vocabulary.objects.create(
                 topic_id=topic_id,
                 word=word,
@@ -276,7 +274,6 @@ class AdminVocabularySerializers(serializers.ModelSerializer):
                 word_image=word_image,
                 pronunciation_audio=pronunciation_audio,
                 pronunciation_video=pronunciation_video,
-                order=order,
                 created_at=timezone.now(),
                 updated_at=timezone.now()
             )
@@ -301,7 +298,6 @@ class AdminVocabularySerializers(serializers.ModelSerializer):
             model.word_image = validated_data.get('word_image', model.word_image)
             model.pronunciation_audio = validated_data.get('pronunciation_audio', model.pronunciation_audio)
             model.pronunciation_video = validated_data.get('pronunciation_video', model.pronunciation_video)
-            model.order = validated_data.get('order', model.order)
             model.save()
 
             return model

@@ -78,7 +78,7 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
         try:
             topic_id = request.query_params.get('topic_id')
             topic = Topic.objects.get(id=topic_id, is_deleted=False, is_public=True)
-            vocabulary_list = topic.vocabularies.filter(is_deleted=False).order_by('order')
+            vocabulary_list = topic.vocabularies.filter(is_deleted=False)
             learned_vocab_ids = UserVocabularyProcess.objects.filter(
                 user_id=request.user, is_learned=True
             ).values_list('vocabulary_id', flat=True)
