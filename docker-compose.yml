@@ -15,38 +15,29 @@ services:
 
   web:
     build: .
-    command: sh -c "python manage.py collectstatic && python manage.py makemigrations && python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000"
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8001"
+
     volumes:
       - ./backend:/app
     ports:
       - "8001:8001"
     environment:
+      - DEBUG=${DEBUG}
+      - SECRET_KEY=${SECRET_KEY}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       - db
     env_file:
       - .env
-
-  nginx:
-    image: nginx:latest
-    volumes:
-      - ./backend/staticfiles:/staticfiles  # Đảm bảo thư mục staticfiles đã được tạo và ánh xạ
-      - ./nginx.conf:/etc/nginx/nginx.conf  # Gắn tệp cấu hình Nginx
-    ports:
-      - "8080:80"
-    depends_on:
-      - web
-
   pgadmin:
     image: dpage/pgadmin4
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}  # Email đăng nhập cho pgAdmin
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}  # Mật khẩu cho pgAdmin
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL} # Email đăng nhập cho pgAdmin
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}           # Mật khẩu cho pgAdmin
     ports:
-      - "8085:80"  # Ánh xạ cổng để truy cập pgAdmin
+      - "8085:80"                                  # Ánh xạ cổng để truy cập pgAdmin
     depends_on:
       - db
 
