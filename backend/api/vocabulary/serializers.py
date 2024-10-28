@@ -70,7 +70,17 @@ class UserCourseSerializers(serializers.ModelSerializer):
 
         return UserTopicSerializers(topics, many=True, context=self.context).data
 
-        
+
+class TeacherCourseSerializers(serializers.ModelSerializer):
+    list_topic = serializers.SerializerMethodField()
+    class Meta:
+        model = Course
+        fields = ['id','name','image','description','list_topic']    
+
+    def get_list_topic(self, obj):
+        topics = Topic.objects.filter(course_id=obj.id, is_deleted=False).order_by('order')
+        return AdminTopicSerializers(topics, many=True, context=self.context).data
+
 class VocabularySerializers(serializers.ModelSerializer):
     is_learned = serializers.SerializerMethodField()
     class Meta:
@@ -188,7 +198,7 @@ class VocabularyNeedReviewSerializer(serializers.ModelSerializer):
 class CourseSerializers(serializers.ModelSerializer):
     class Meta:
         model = Course
-        fields = ['id','name','image','description']
+        fields = ['id','name','image','description','is_public']
 
     def save(self, request):
         try:
@@ -196,35 +206,44 @@ class CourseSerializers(serializers.ModelSerializer):
             image = self.validated_data['image']
             description = self.validated_data['description']
             is_public = self.validated_data['is_public']
-            return Course.objects.create(name=name,image=image, description=description,is_public=is_public)
+            return Course.objects.create(name=name,image=image, description=description,teacher_id=request.user,is_public=is_public)
         except Exception as error:
             print("CourseSerializers_save_error: ", error)
             return None
+        
     def update(self, request):
         try:
-            topic_id = request.query_params.get('course_id')
+            course_id = request.query_params.get('course_id')
+            if not course_id:
+                raise serializers.ValidationError("course_id is required.")
+            
             validated_data = self.validated_data
-            model = Course.objects.get(pk=topic_id)
+            try:
+                model = Course.objects.get(pk=course_id)
+            except Course.DoesNotExist:
+                raise serializers.ValidationError("Course not found.")
             if model.is_deleted:
                 raise serializers.ValidationError("Course has been deleted.")
             model.name = validated_data.get('name', model.name)
             model.image = validated_data.get('image', model.image)
-            model.image = validated_data.get('description', model.image)
+            model.description = validated_data.get('description', model.description) 
             model.is_public = validated_data.get('is_public', model.is_public)
             model.save()
             return model
         except serializers.ValidationError as ve:
-            print("CourseSerializers_update_validation_error: ", ve)
+            print("CourseSerializers_update_validation_error:", ve)
             raise ve
         except Exception as error:
-            print("CourseSerializers_update_error: ", error)
-            raise serializers.ValidationError("An error occurred while updating the Topic.")
+            print("CourseSerializers_update_error:", error)
+            raise serializers.ValidationError("An error occurred while updating the Course.")
 
     
     def delete(self, request):
         try:
-            topic_id = request.query_params.get('course_id')
-            model = Topic.objects.get(pk=topic_id)
+            course_id = request.query_params.get('course_id')
+            if not course_id:
+                raise serializers.ValidationError("course_id is required.")
+            model = Course.objects.get(pk=course_id)
             if not model.is_deleted:
                 model.is_deleted=True
                 model.save()

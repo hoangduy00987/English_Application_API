@@ -8,7 +8,7 @@ class Course(models.Model):
     name = models.CharField(max_length=255,null=True)
     description = models.TextField(null=True)
     image = models.ImageField(upload_to='course_imgae/',null=True)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
+    teacher_id = models.ForeignKey(User,related_name='teacher' ,on_delete=models.CASCADE,null=True,blank=True)
     is_public = models.BooleanField(null=True)
     is_deleted = models.BooleanField(null=True)
     def __str__(self) -> str:
@@ -17,6 +17,9 @@ class Course(models.Model):
 class UserCourseEnrollment(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     course_id = models.ForeignKey(Course, on_delete=models.CASCADE,null=True)
+
+    def __str__(self) -> str:
+        return f"{self.user_id} - {self.course_id.name}"
 
 class Topic(models.Model):
     course_id = models.ForeignKey(Course,on_delete=models.CASCADE,null=True)

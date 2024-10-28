@@ -14,6 +14,7 @@ from rest_framework.pagination import PageNumberPagination
 import random 
 from django.utils import timezone
 from datetime import datetime
+from django.db.models import Q
 
 class HistoryLogPagination(PageNumberPagination):
     page_size = 20
@@ -43,7 +44,6 @@ class HistoryLogPagination(PageNumberPagination):
 # get all topic
 class UserTopicViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
-    serializer_class = UserCourseSerializers
     pagination_class = HistoryLogPagination
 
     @action(methods=['GET'], detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
@@ -53,10 +53,18 @@ class UserTopicViewSet(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            queryset = Course.objects.get(id=course_id, is_deleted=False)
-            serializer = self.serializer_class(queryset, context={'request': request})
+            course = Course.objects.get(id=course_id, is_deleted=False)
+            is_teacher = course.teacher_id.id == request.user.id
+            if is_teacher:
+                serializer = TeacherCourseSerializers(course, context={'request': request})
+            else:
+                serializer = UserCourseSerializers(course, context={'request': request})
 
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({
+                "is_teacher": is_teacher,
+                "topics": serializer.data
+                
+            }, status=status.HTTP_200_OK)
 
         except Course.DoesNotExist:
             return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)
@@ -538,27 +546,52 @@ class AdminManageMultipleChoicesExerciseViewSet(viewsets.ModelViewSet):
 
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializers
-    permission_classes = [IsAuthenticated]  
-    @action(methods='GET', detail=True, url_path="course_get_by_id", url_name="course_get_by_id")
-    def course_get_by_id(self, request):
+    permission_classes = [IsAuthenticated] 
+        
+    @action(methods=["GET"], detail=False, url_path="get_all_course_public", url_name="get_all_course_public")
+    def get_all_course_public(self, request):
         try:
-            course_id = request.query_params.get("course_id")
-            queryset = Course.objects.get(id=course_id,is_deleted=False)
-            serializer = self.serializer_class(queryset, context={'request':request})
+            queryset = Course.objects.filter(is_deleted=False,is_public=True)
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                # Truyền context với request vào serializer
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+            # Truyền context với request vào serializer
+            serializer = self.serializer_class(queryset, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Course.DoesNotExist:
-            return Response({"message":"Course Not Found"},status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-        
+    
+    @action(methods=["GET"], detail=False, url_path="get_all_my_course_and_enrolled", url_name="get_all_my_course_and_enrolled")
+    def get_all_my_course_and_enrolled(self, request):
+        try:
+            queryset = Course.objects.filter(
+                Q(teacher_id=request.user) | 
+                Q(id__in=UserCourseEnrollment.objects.filter(user_id=request.user).values('course_id')),
+                is_deleted=False
+            )
+            
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = self.serializer_class(queryset, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as error:
+            print("error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
     @action(methods="POST", detail=False, url_path="course_add", url_name="course_add")
     def course_add(self, request):
         try:
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
                 serializer.save(request=request)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response({'message':'course added successfuly'}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except serializers.ValidationError as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
