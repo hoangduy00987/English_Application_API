@@ -3,14 +3,21 @@ from django.urls import path,include
 from .views import *
 
 #Course
-course_get_by_id = CourseViewSet.as_view(
-    {'get':'course_get_by_id'}
+
+get_all_course_public = CourseViewSet.as_view(
+    {'get':'get_all_course_public'}
+)
+get_all_my_course_and_enrolled = CourseViewSet.as_view(
+    {'get':'get_all_my_course_and_enrolled'}
 )
 course_add = CourseViewSet.as_view(
     {'post':'course_add'}
 )
 course_update_by_id = CourseViewSet.as_view(
     {'patch':'course_update_by_id'}
+)
+course_delete_by_id = CourseViewSet.as_view(
+    {'delete':'course_delete_by_id'}
 )
 #Topic
 topic_user_get_all = UserTopicViewSet.as_view(
@@ -96,8 +103,11 @@ admin_multiple_choices_exercise_delete_by_id = AdminManageMultipleChoicesExercis
 
 urlpatterns = [
     #Course
-    path('course_get_by_id/', course_get_by_id, name='course_get_by_id'),
-    path('course_get_by_id/', course_get_by_id, name='course_get_by_id'),
+    path('get_all_course_public/', get_all_course_public, name='get_all_course_public'),
+    path('course_update_by_id/', course_update_by_id, name='course_update_by_id'),
+    path('get_all_my_course_and_enrolled/', get_all_my_course_and_enrolled, name='get_all_my_course_and_enrolled'),
+    path('course_add/', course_add, name='course_add'),
+    path('course_delete_by_id/', course_delete_by_id, name='course_delete_by_id'),
     # Topic
     path('topic_user_get_all/', topic_user_get_all, name='topic_user_get_all'),
     path('admin_topic_get_all/', admin_topic_get_all, name='admin_topic_get_all'),
