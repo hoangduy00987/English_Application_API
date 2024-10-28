@@ -42,9 +42,6 @@ class UserTopicSerializers(serializers.ModelSerializer):
         ).count()
 
         return learned_count
-
-
-
         
     def save(self, request):
         name = self.validated_data['name']
@@ -52,8 +49,28 @@ class UserTopicSerializers(serializers.ModelSerializer):
         image = self.validated_data['image']
         return Topic.objects.create(name=name,order=order, image=image,created_at=datetime.now())
         
-    
+class UserCourseSerializers(serializers.ModelSerializer):
+    list_topic = serializers.SerializerMethodField()
+    class Meta:
+        model = Course
+        fields = ['id','name','image','description','list_topic']    
 
+    def get_list_topic(self, obj):
+        topics = Topic.objects.filter(course_id=obj.id, is_deleted=False, is_public=True).order_by('order')
+
+        if topics.exists():
+            first_topic = topics.first()
+
+            user_topic, created = UserTopicProgress.objects.get_or_create(
+                user_id=self.context['request'].user,
+                topic_id=first_topic
+            )
+            user_topic.is_locked = False
+            user_topic.save()
+
+        return UserTopicSerializers(topics, many=True, context=self.context).data
+
+        
 class VocabularySerializers(serializers.ModelSerializer):
     is_learned = serializers.SerializerMethodField()
     class Meta:
@@ -168,7 +185,55 @@ class VocabularyNeedReviewSerializer(serializers.ModelSerializer):
         fields = ['id','vocabularies', 'last_learned_at', 'is_need_review']
 
 #==========ADMIN==========
+class CourseSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ['id','name','image','description']
 
+    def save(self, request):
+        try:
+            name = self.validated_data['name']
+            image = self.validated_data['image']
+            description = self.validated_data['description']
+            is_public = self.validated_data['is_public']
+            return Course.objects.create(name=name,image=image, description=description,is_public=is_public)
+        except Exception as error:
+            print("CourseSerializers_save_error: ", error)
+            return None
+    def update(self, request):
+        try:
+            topic_id = request.query_params.get('course_id')
+            validated_data = self.validated_data
+            model = Course.objects.get(pk=topic_id)
+            if model.is_deleted:
+                raise serializers.ValidationError("Course has been deleted.")
+            model.name = validated_data.get('name', model.name)
+            model.image = validated_data.get('image', model.image)
+            model.image = validated_data.get('description', model.image)
+            model.is_public = validated_data.get('is_public', model.is_public)
+            model.save()
+            return model
+        except serializers.ValidationError as ve:
+            print("CourseSerializers_update_validation_error: ", ve)
+            raise ve
+        except Exception as error:
+            print("CourseSerializers_update_error: ", error)
+            raise serializers.ValidationError("An error occurred while updating the Topic.")
+
+    
+    def delete(self, request):
+        try:
+            topic_id = request.query_params.get('course_id')
+            model = Topic.objects.get(pk=topic_id)
+            if not model.is_deleted:
+                model.is_deleted=True
+                model.save()
+                return model
+            raise serializers.ValidationError("Course has been deleted")
+        except Exception as error:
+            print("CourseSerializers_delete_error: ", error)
+            return None
+        
 class AdminTopicSerializers(serializers.ModelSerializer):
     name = serializers.CharField(required=False)
     order = serializers.IntegerField(required=False)

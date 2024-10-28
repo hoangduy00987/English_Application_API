@@ -2,6 +2,16 @@
 from django.urls import path,include
 from .views import *
 
+#Course
+course_get_by_id = CourseViewSet.as_view(
+    {'get':'course_get_by_id'}
+)
+course_add = CourseViewSet.as_view(
+    {'post':'course_add'}
+)
+course_update_by_id = CourseViewSet.as_view(
+    {'patch':'course_update_by_id'}
+)
 #Topic
 topic_user_get_all = UserTopicViewSet.as_view(
     {'get':'topic_user_get_all'}
@@ -85,6 +95,9 @@ admin_multiple_choices_exercise_delete_by_id = AdminManageMultipleChoicesExercis
 )
 
 urlpatterns = [
+    #Course
+    path('course_get_by_id/', course_get_by_id, name='course_get_by_id'),
+    path('course_get_by_id/', course_get_by_id, name='course_get_by_id'),
     # Topic
     path('topic_user_get_all/', topic_user_get_all, name='topic_user_get_all'),
     path('admin_topic_get_all/', admin_topic_get_all, name='admin_topic_get_all'),

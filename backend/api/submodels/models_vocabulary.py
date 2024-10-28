@@ -4,7 +4,22 @@ from datetime import datetime
 from django.utils import timezone
 
 
+class Course(models.Model):
+    name = models.CharField(max_length=255,null=True)
+    description = models.TextField(null=True)
+    image = models.ImageField(upload_to='course_imgae/',null=True)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
+    is_public = models.BooleanField(null=True)
+    is_deleted = models.BooleanField(null=True)
+    def __str__(self) -> str:
+        return self.name
+
+class UserCourseEnrollment(models.Model):
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    course_id = models.ForeignKey(Course, on_delete=models.CASCADE,null=True)
+
 class Topic(models.Model):
+    course_id = models.ForeignKey(Course,on_delete=models.CASCADE,null=True)
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='topic_image/', blank=True, null=True)
     is_locked = models.BooleanField(default=True)
@@ -21,7 +36,7 @@ class Topic(models.Model):
 
 class UserTopicProgress(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    topic_id = models.ForeignKey(Topic, related_name='topics',on_delete=models.CASCADE)
+    topic_id = models.ForeignKey(Topic, related_name='topic',on_delete=models.CASCADE,null=True)
     is_locked = models.BooleanField(default=True)
 
     def __str__(self) -> str:

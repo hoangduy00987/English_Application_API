@@ -39,35 +39,31 @@ class HistoryLogPagination(PageNumberPagination):
             'results': data,
         })
 
-#=====================USER
+
 # get all topic
 class UserTopicViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
-    serializer_class = UserTopicSerializers
+    serializer_class = UserCourseSerializers
     pagination_class = HistoryLogPagination
 
-    @action(methods='GET', detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
+    @action(methods=['GET'], detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
     def topic_user_get_all(self, request):
         try:
-            topics = Topic.objects.filter(is_deleted=False, is_public=True).order_by("order")
-            first_topic = topics.first()
+            course_id = request.query_params.get("course_id")
+            if not course_id:
+                return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            if first_topic:
-                user_topic, created= UserTopicProgress.objects.get_or_create(
-                    user_id=request.user,
-                    topic_id=first_topic
-                )
-                user_topic.is_locked = False  
-                user_topic.save()
-            page = self.paginate_queryset(topics)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
-            serializer = self.get_serializer(topics, many=True)
+            queryset = Course.objects.get(id=course_id, is_deleted=False)
+            serializer = self.serializer_class(queryset, context={'request': request})
+
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Course.DoesNotExist:
+            return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
-            print('error: ', error)
+            print("error:", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 #Get vocabuylray to learn
 class UserVocabularyViewSet(viewsets.ModelViewSet):
@@ -242,7 +238,7 @@ class ReviewVocabularyViewSet(APIView):
 class AdminManageTopicViewset(viewsets.ModelViewSet):
     serializer_class = AdminTopicSerializers
     pagination_class = HistoryLogPagination
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     @action(methods=["GET"], detail=False, url_path="admin_topic_get_all", url_name="admin_topic_get_all")
     def admin_topic_get_all(self, request):
@@ -312,7 +308,7 @@ class AdminManageTopicViewset(viewsets.ModelViewSet):
 
 class AdminListVocabularyViewSet(viewsets.ModelViewSet):
     serializer_class = AdminVocabularyOfTopicSerializers
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     @action(methods="GET", detail=False, url_path="admin_vocabulary_get_all", url_name="admin_vocabulary_get_all")
     def admin_vocabulary_get_all(self, request):
@@ -330,7 +326,7 @@ class AdminListVocabularyViewSet(viewsets.ModelViewSet):
 
 class AdminVocabularyViewSet(viewsets.ModelViewSet):
     serializer_class = AdminVocabularySerializers
-    permission_classes = [IsAdminUser]  
+    permission_classes = [IsAuthenticated]  
     @action(methods='GET', detail=True, url_path="admin_vocabulary_get_by_id", url_name="admin_vocabulary_get_by_id")
     def admin_vocabulary_get_by_id(self, request):
         try:
@@ -387,7 +383,7 @@ class AdminVocabularyViewSet(viewsets.ModelViewSet):
         
 class AdminMiniExerciseViewSet(viewsets.ModelViewSet):
     serializer_class = AdminMiniExerciseSerializers
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
     pagination_class = HistoryLogPagination
 
     @action(methods=["GET"], detail=False, url_path="admin_get_all_fill_in_exercises", url_name="admin_get_all_fill_in_exercises")
@@ -422,7 +418,7 @@ class AdminMiniExerciseViewSet(viewsets.ModelViewSet):
 # Fill in exercise ===========
 class AdminFillinAnswerExerciseViewSet(viewsets.ModelViewSet):
     serializer_class = AdminFillinAnswerExerciseSerializers
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     @action(methods=["GET"], detail=True, url_path="admin_get_fill_in_exercise_by_id", url_name="admin_get_fill_in_exercise_by_id")
     def admin_get_fill_in_exercise_by_id(self, request):
@@ -439,7 +435,7 @@ class AdminFillinAnswerExerciseViewSet(viewsets.ModelViewSet):
 
 class AdminManageFillinExerciseViewSet(viewsets.ModelViewSet):
     serializer_class = AdminManageFillinExerciseSerializers
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     @action(methods=["POST"], detail=False, url_path="admin_fill_in_exercise_add", url_name="admin_fill_in_exercise_add")
     def admin_fill_in_exercise_add(self, request):
@@ -483,7 +479,7 @@ class AdminManageFillinExerciseViewSet(viewsets.ModelViewSet):
 # Multiple choices exercise =============
 class AdminMultipleChoicesAnswerExerciseViewSet(viewsets.ModelViewSet):
     serializer_class = AdminMultipleChoicesAnswerExerciseSerializers
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     @action(methods=["GET"], detail=True, url_path="admin_get_multiple_choices_exercise_by_id", url_name="admin_get_multiple_choices_exercise_by_id")
     def admin_get_multiple_choices_exercise_by_id(self, request):
@@ -500,7 +496,7 @@ class AdminMultipleChoicesAnswerExerciseViewSet(viewsets.ModelViewSet):
 
 class AdminManageMultipleChoicesExerciseViewSet(viewsets.ModelViewSet):
     serializer_class = AdminManageMultipleChoicesExerciseSerializers
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     @action(methods=["POST"], detail=False, url_path="admin_multiple_choices_exercise_add", url_name="admin_multiple_choices_exercise_add")
     def admin_multiple_choices_exercise_add(self, request):
@@ -539,3 +535,61 @@ class AdminManageMultipleChoicesExerciseViewSet(viewsets.ModelViewSet):
         except Exception as error:
             print("admin_multiple_choices_exercise_delete_by_id_error:", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+class CourseViewSet(viewsets.ModelViewSet):
+    serializer_class = CourseSerializers
+    permission_classes = [IsAuthenticated]  
+    @action(methods='GET', detail=True, url_path="course_get_by_id", url_name="course_get_by_id")
+    def course_get_by_id(self, request):
+        try:
+            course_id = request.query_params.get("course_id")
+            queryset = Course.objects.get(id=course_id,is_deleted=False)
+            serializer = self.serializer_class(queryset, context={'request':request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Course.DoesNotExist:
+            return Response({"message":"Course Not Found"},status=status.HTTP_404_NOT_FOUND)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(methods="POST", detail=False, url_path="course_add", url_name="course_add")
+    def course_add(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                serializer.save(request=request)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except serializers.ValidationError as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+    
+    @action(methods="PATCH", detail=False, url_path="course_update_by_id", url_name="course_update_by_id")
+    def course_update_by_id(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                update_model = serializer.update(request=request)
+                if update_model is None:
+                    return Response({"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message":"Course updated successfuly"}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(methods="DELETE", detail=False, url_path="course_delete_by_id", url_name="course_delete_by_id")
+    def course_delete_by_id(self, request):
+        try:
+            queryset = self.serializer_class()
+            delete_model = queryset.delete(request=request)
+            if delete_model is None:
+                 return Response({"message": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Course  deleted successfully"}, status=status.HTTP_200_OK)  
+        except Exception as error:
+            print("error", error) 
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
