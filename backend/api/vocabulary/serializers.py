@@ -165,7 +165,7 @@ class MiniExerciseSerializers(serializers.ModelSerializer):
 class MiniExerciseFillinAnswerSerializers(serializers.ModelSerializer):
     class Meta:
         model = MiniExerciseFillinAnswer
-        fields = ['id','correct_answer', 'available_answers']
+        fields = ['id','correct_answer']
 
 class MiniExerciseMultipleChoicesAnswerSerializers(serializers.ModelSerializer):
     class Meta:
@@ -407,9 +407,13 @@ class AdminVocabularySerializers(serializers.ModelSerializer):
 
 # ==== Mini Exercise ====
 class AdminMiniExerciseSerializers(serializers.ModelSerializer):
+    content = serializers.SerializerMethodField()
     class Meta:
         model = MiniExercise
         fields = ['id', 'vocabulary_id', 'exercise_type', 'content']
+
+    def get_content(self, obj):
+        return f'{obj.content} - {obj.vocabulary_id.word}'
 
 
 # Fill in exercise =====================
@@ -432,11 +436,10 @@ class AdminFillinAnswerExerciseSerializers(serializers.ModelSerializer):
 
 class AdminManageAnswerFillinExerciseSerializers(serializers.ModelSerializer):
     correct_answer = serializers.CharField(required=True)
-    available_answers = serializers.CharField(required=True)
 
     class Meta:
         model = MiniExerciseFillinAnswer
-        fields = ['correct_answer','available_answers']
+        fields = ['correct_answer']
 
 
 class AdminManageFillinExerciseSerializers(serializers.ModelSerializer):
@@ -485,7 +488,6 @@ class AdminManageFillinExerciseSerializers(serializers.ModelSerializer):
             model.save()
             answer_model = MiniExerciseFillinAnswer.objects.get(exercise_id=model)
             answer_model.correct_answer = answer.get('correct_answer', answer_model.correct_answer)
-            answer_model.available_answers = answer.get('available_answers', answer_model.available_answers)
             answer_model.save()
             return model
         except MiniExercise.DoesNotExist:

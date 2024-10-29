@@ -100,7 +100,6 @@ class MiniExercise(models.Model):
 class MiniExerciseFillinAnswer(models.Model):
     exercise_id = models.ForeignKey(MiniExercise, on_delete=models.CASCADE)
     correct_answer = models.CharField(max_length=255)
-    available_answers = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
