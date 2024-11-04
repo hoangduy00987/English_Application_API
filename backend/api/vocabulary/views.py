@@ -15,6 +15,12 @@ import random
 from django.utils import timezone
 from datetime import datetime
 from django.db.models import Q
+import torch
+from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
+import librosa
+from .serializers import AudioFileSerializer
+
+
 
 class HistoryLogPagination(PageNumberPagination):
     page_size = 20
@@ -625,4 +631,45 @@ class CourseViewSet(viewsets.ModelViewSet):
         except Exception as error:
             print("error", error) 
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+class UserEnrollCourseView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request):
+        try:
+            serializer = StudentEnrollCourseSerializers(data=request.data)
+            if serializer.is_valid():
+                serializer.enroll(request=request)
+                return Response({'message':'students added successfuly'},status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            print('error',error)
+            return Response({'message':'An error occurred on the server', 'detail':str(error)},status=status.HTTP_400_BAD_REQUEST)
+
+
+class SpeechToTextAPIView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        model_directory = "./vocabulary/Model3" 
+        self.tokenizer = Wav2Vec2Tokenizer.from_pretrained(model_directory)
+        self.model = Wav2Vec2ForCTC.from_pretrained(model_directory)
+        if torch.cuda.is_available():
+            self.model = self.model.to("cuda")  # Đưa mô hình vào GPU
+
+    def post(self, request):
+        serializer = AudioFileSerializer(data=request.data)
+        if serializer.is_valid():
+            audio_file = serializer.validated_data['file']
+            input_audio, _ = librosa.load(audio_file, sr=16000)
+
+            input_values = self.tokenizer(input_audio, return_tensors="pt").input_values
+            if torch.cuda.is_available():
+                input_values = input_values.to("cuda")  # Đưa dữ liệu vào GPU
+
+            with torch.no_grad():
+                logits = self.model(input_values).logits
+                predicted_ids = torch.argmax(logits, dim=-1)
+                transcription = self.tokenizer.batch_decode(predicted_ids)[0]
+
+            return Response({"transcription": transcription}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

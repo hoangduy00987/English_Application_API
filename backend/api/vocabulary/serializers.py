@@ -618,3 +618,52 @@ class AdminManageMultipleChoicesExerciseSerializers(serializers.ModelSerializer)
         except Exception as error:
             print("delete_multiple_choices_exercise_error:", error)
             return None
+
+
+class StudentEnrollCourseSerializers(serializers.ModelSerializer):
+    emails = serializers.ListField(child=serializers.EmailField(), allow_empty=False)
+    course_id = serializers.IntegerField()
+    class Meta:
+        model = UserCourseEnrollment
+        fields = ['emails','course_id']
+
+    
+    def enroll(self,request):
+        try:
+            emails = self.validated_data['emails']
+            course_id = self.validated_data['course_id']
+            course = Course.objects.get(id=course_id)
+            
+            results = {
+                "enrolled_students": [],
+                "errors": []
+            }
+
+            for email in emails:
+                try:
+                    student = User.objects.get(email=email)
+                    enrollment, created = UserCourseEnrollment.objects.get_or_create(
+                        user_id=student, course_id=course
+                    )
+
+                    if created:
+                        results["enrolled_students"].append(email)
+                    else:
+                        results["errors"].append(
+                            f"User with email {email} is already enrolled in course {course_id}."
+                        )
+
+                except User.DoesNotExist:
+                    results["errors"].append(f"Student with email {email} does not exist.")
+
+            return results
+
+        except Course.DoesNotExist:
+            return {"errors": [f"Course with ID {course_id} does not exist."]}
+        except Exception as error:
+            print("Error:", error)
+            return {"errors": ["An unexpected error occurred."]}
+
+
+class AudioFileSerializer(serializers.Serializer):
+    file = serializers.FileField()
