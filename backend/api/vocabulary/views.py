@@ -648,9 +648,10 @@ class UserEnrollCourseView(APIView):
 
 
 class SpeechToTextAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        model_directory = "./vocabulary/Model3" 
+        model_directory = "/root/English_Application_API/backend/api/vocabulary/Model3" 
         self.tokenizer = Wav2Vec2Tokenizer.from_pretrained(model_directory)
         self.model = Wav2Vec2ForCTC.from_pretrained(model_directory)
         if torch.cuda.is_available():
