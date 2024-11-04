@@ -20,3 +20,4 @@ backend/api/migrations/
 media/
 staticfiles/
 staticfiles/
+backend/api/vocabulary/Model3

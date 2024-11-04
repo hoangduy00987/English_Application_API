@@ -141,4 +141,7 @@ urlpatterns = [
     path('admin_multiple_choices_exercise_add/', admin_multiple_choices_exercise_add, name='admin_multiple_choices_exercise_add'),
     path('admin_multiple_choices_exercise_update_by_id/', admin_multiple_choices_exercise_update_by_id, name='admin_multiple_choices_exercise_update_by_id'),
     path('admin_multiple_choices_exercise_delete_by_id/', admin_multiple_choices_exercise_delete_by_id, name='admin_multiple_choices_exercise_delete_by_id'),
+    #UserEnrolled
+    path('enroll_student/',UserEnrollCourseView.as_view(),name='enroll_student'),
+    path('detect_audio/',SpeechToTextAPIView.as_view(),name='detect_audio')
 ]

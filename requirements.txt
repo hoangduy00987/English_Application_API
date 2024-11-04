@@ -59,3 +59,7 @@ wcwidth==0.2.13
 whitenoise==6.7.0
 exponent-server-sdk==2.1.0
 django-celery-beat==2.7.0
+torch 
+transformers
+soundfile 
+librosa
