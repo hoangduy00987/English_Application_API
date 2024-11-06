@@ -23,9 +23,9 @@ from .serializers import AudioFileSerializer
 
 
 class HistoryLogPagination(PageNumberPagination):
-    page_size = 20
+    page_size = 2
     page_size_query_param = 'page_size'
-    max_page_size = 100
+    max_page_size = 10
 
     def get_paginated_response(self, data):
         next_page = previous_page = None
@@ -553,7 +553,7 @@ class AdminManageMultipleChoicesExerciseViewSet(viewsets.ModelViewSet):
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializers
     permission_classes = [IsAuthenticated] 
-        
+    pagination_class = HistoryLogPagination
     @action(methods=["GET"], detail=False, url_path="get_all_course_public", url_name="get_all_course_public")
     def get_all_course_public(self, request):
         try:
@@ -645,7 +645,7 @@ class UserEnrollCourseView(APIView):
         except Exception as error:
             print('error',error)
             return Response({'message':'An error occurred on the server', 'detail':str(error)},status=status.HTTP_400_BAD_REQUEST)
-
+    
 
 class SpeechToTextAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -674,3 +674,22 @@ class SpeechToTextAPIView(APIView):
 
             return Response({"transcription": transcription}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AdminCourseViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAdminUser]
+    serializer_class = CourseSerializers
+    pagination_class = HistoryLogPagination
+
+    @action(methods="GET", detail=False, url_path="courses_get_all", url_name="courses_get_all")
+    def courses_get_all(self, request):
+        try:
+            queryset = Course.objects.filter(is_deleted=False)
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+            serializer = self.serializer_class(queryset, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)

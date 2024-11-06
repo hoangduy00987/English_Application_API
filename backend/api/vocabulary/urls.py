@@ -100,8 +100,14 @@ admin_multiple_choices_exercise_update_by_id = AdminManageMultipleChoicesExercis
 admin_multiple_choices_exercise_delete_by_id = AdminManageMultipleChoicesExerciseViewSet.as_view(
     {'delete':'admin_multiple_choices_exercise_delete_by_id'}
 )
+#AdminFunction
+courses_get_all = AdminCourseViewSet.as_view(
+    {'get':'courses_get_all'}
+)
 
 urlpatterns = [
+    #Adminfunction
+    path('courses_get_all/', courses_get_all, name='courses_get_all'),
     #Course
     path('get_all_course_public/', get_all_course_public, name='get_all_course_public'),
     path('course_update_by_id/', course_update_by_id, name='course_update_by_id'),
