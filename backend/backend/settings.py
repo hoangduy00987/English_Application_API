@@ -68,8 +68,8 @@ AUTHENTICATION_BACKENDS = [
 CORS_ALLOWED_ORIGINS = [
    'http://localhost:3000', 
    'http://127.0.0.1:3000', 
-   'http://engina.duytech.site',
-   'http://api.duytech.site',
+   'https://engina.duytech.site',
+   'https://api.duytech.site',
    'http://localhost:3007', 
    'http://localhost:3008', 
    'http://localhost:3018',
