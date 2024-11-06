@@ -206,7 +206,7 @@ class CourseSerializers(serializers.ModelSerializer):
             image = self.validated_data['image']
             description = self.validated_data['description']
             is_public = self.validated_data['is_public']
-            return Course.objects.create(name=name,image=image, description=description,teacher_id=request.user,is_public=is_public)
+            return Course.objects.create(name=name,image=image, description=description,teacher_id=request.user,is_deleted=False,is_public=is_public)
         except Exception as error:
             print("CourseSerializers_save_error: ", error)
             return None
@@ -667,3 +667,8 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
 
 class AudioFileSerializer(serializers.Serializer):
     file = serializers.FileField()
+
+class AdminCourseSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ['id','name','image','description','is_public']
