@@ -104,7 +104,17 @@ admin_multiple_choices_exercise_delete_by_id = AdminManageMultipleChoicesExercis
 courses_get_all = AdminCourseViewSet.as_view(
     {'get':'courses_get_all'}
 )
-
+#enroll student
+ 
+enroll_student = UserEnrollCourseView.as_view(
+    {'post':'enroll_student'}
+)
+delete_student_from_course = UserEnrollCourseView.as_view(
+    {'delete':'delete_student_from_course'}
+)
+get_all_students_from_course = UserEnrollCourseView.as_view(
+    {'get':'get_all_students_from_course'}
+)
 urlpatterns = [
     #Adminfunction
     path('courses_get_all/', courses_get_all, name='courses_get_all'),
@@ -148,6 +158,8 @@ urlpatterns = [
     path('admin_multiple_choices_exercise_update_by_id/', admin_multiple_choices_exercise_update_by_id, name='admin_multiple_choices_exercise_update_by_id'),
     path('admin_multiple_choices_exercise_delete_by_id/', admin_multiple_choices_exercise_delete_by_id, name='admin_multiple_choices_exercise_delete_by_id'),
     #UserEnrolled
-    path('enroll_student/',UserEnrollCourseView.as_view(),name='enroll_student'),
+    path('delete_student_from_course/',delete_student_from_course),
+    path('enroll_student/',enroll_student),
+    path('get_all_students_from_course/',get_all_students_from_course),
     path('detect_audio/',SpeechToTextAPIView.as_view(),name='detect_audio')
 ]
