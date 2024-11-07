@@ -257,20 +257,21 @@ class AdminTopicSerializers(serializers.ModelSerializer):
     name = serializers.CharField(required=False)
     order = serializers.IntegerField(required=False)
     image = serializers.ImageField(required=False)
-
+    course_id = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all())
     num_words = serializers.SerializerMethodField()
     class Meta:
         model = Topic
-        fields = ['id','order','name', 'image','num_words','is_public']
+        fields = ['id','course_id','order','name', 'image','num_words','is_public']
     def get_num_words(self, obj):
         return obj.vocabularies.filter(is_deleted=False).count()
     
     def save(self, request):
         try:
+            course_id = self.validated_data['course_id']
             name = self.validated_data['name']
             order = self.validated_data['order']
             image = self.validated_data['image']
-            return Topic.objects.create(name=name,order=order, image=image,created_at=datetime.now())
+            return Topic.objects.create(course_id=course_id,name=name,order=order, image=image,created_at=datetime.now())
         except Exception as error:
             print("TopicSerializers_save_error: ", error)
             return None
