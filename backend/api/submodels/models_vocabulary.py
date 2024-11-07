@@ -17,7 +17,7 @@ class Course(models.Model):
 class UserCourseEnrollment(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     course_id = models.ForeignKey(Course, on_delete=models.CASCADE,null=True)
-
+    enrolled_at = models.DateTimeField(null=True)
     def __str__(self) -> str:
         return f"{self.user_id} - {self.course_id.name}"
 

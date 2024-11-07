@@ -632,10 +632,31 @@ class CourseViewSet(viewsets.ModelViewSet):
             print("error", error) 
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
-class UserEnrollCourseView(APIView):
+class UserEnrollCourseView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    
-    def post(self,request):
+    pagination_class = HistoryLogPagination
+    serializer_class = StudentEnrollCourseSerializers
+    @action(methods="GET", detail=False, url_path="get_all_students_from_course", url_name="get_all_students_from_course")
+    def get_all_students_from_course(self, request):
+        try:
+            course_id = request.query_params.get('course_id')
+            if not course_id:
+                return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            enrollments = UserCourseEnrollment.objects.filter(course_id=course_id)
+            if not enrollments.exists():
+                return Response({"message": "No students enrolled in this course."}, status=status.HTTP_404_NOT_FOUND)
+
+            students = [enrollment.user_id for enrollment in enrollments]
+            serializer = StudentSerializer(students, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as error:
+            print("Error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods="POST", detail=False, url_path="enroll_student", url_name="enroll_student")
+    def enroll_student(self,request):
         try:
             serializer = StudentEnrollCourseSerializers(data=request.data)
             if serializer.is_valid():
@@ -646,6 +667,15 @@ class UserEnrollCourseView(APIView):
             print('error',error)
             return Response({'message':'An error occurred on the server', 'detail':str(error)},status=status.HTTP_400_BAD_REQUEST)
     
+    @action(methods="DELETE", detail=False, url_path="delete_student_from_course", url_name="delete_student_from_course")
+    def delete_student_from_course(self,request):
+        try:
+            queryset = StudentEnrollCourseSerializers()
+            delete_model = queryset.delete(request=request)
+            return Response({"message": "Student  deleted from from course successfully"}, status=status.HTTP_200_OK)  
+        except Exception as error:
+            print("error", error) 
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 class SpeechToTextAPIView(APIView):
     permission_classes = [IsAuthenticated]

@@ -14,6 +14,7 @@ from django.core.mail import send_mail, EmailMessage
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from django.utils import timezone
 from datetime import timedelta
+import json
 
 #============USER
 class UserTopicSerializers(serializers.ModelSerializer):
@@ -644,7 +645,7 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
                 try:
                     student = User.objects.get(email=email)
                     enrollment, created = UserCourseEnrollment.objects.get_or_create(
-                        user_id=student, course_id=course
+                        user_id=student, course_id=course,enrolled_at=timezone.now()
                     )
 
                     if created:
@@ -665,6 +666,16 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
             print("Error:", error)
             return {"errors": ["An unexpected error occurred."]}
 
+    def delete(self, request):
+        try:
+            emails = request.data.get('emails')
+            for email in emails:
+                student = User.objects.get(email=email)
+                model = UserCourseEnrollment.objects.get(user_id=student)
+                model.delete()
+        except Exception as error:
+            print("error: ", error)
+            return None
 
 class AudioFileSerializer(serializers.Serializer):
     file = serializers.FileField()
@@ -673,3 +684,16 @@ class AdminCourseSerializers(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ['id','name','image','description','is_public']
+
+class StudentSerializer(serializers.ModelSerializer):
+    enrolled_at = serializers.SerializerMethodField()
+    class Meta:
+        model = User
+        fields = ["email",'enrolled_at']
+    def get_enrolled_at(self, user):
+        try:
+            enrollment = UserCourseEnrollment.objects.get(user_id=user)
+            return enrollment.enrolled_at 
+
+        except UserCourseEnrollment.DoesNotExist:
+            return None
