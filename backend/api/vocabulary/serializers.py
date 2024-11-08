@@ -669,9 +669,10 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
     def delete(self, request):
         try:
             emails = request.data.get('emails')
+            course_id = request.data.get('course_id')
             for email in emails:
                 student = User.objects.get(email=email)
-                model = UserCourseEnrollment.objects.get(user_id=student)
+                model = UserCourseEnrollment.objects.filter(user_id=student,course_id=course_id)
                 model.delete()
         except Exception as error:
             print("error: ", error)
