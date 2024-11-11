@@ -630,10 +630,10 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
         fields = ['emails','course_id']
 
     
-    def enroll(self,request):
+    def enroll(self, request):
         try:
-            emails = self.validated_data['emails']
-            course_id = self.validated_data['course_id']
+            emails = self.validated_data.get('emails', [])
+            course_id = self.validated_data.get('course_id')
             course = Course.objects.get(id=course_id)
             
             results = {
@@ -645,7 +645,7 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
                 try:
                     student = User.objects.get(email=email)
                     enrollment, created = UserCourseEnrollment.objects.get_or_create(
-                        user_id=student, course_id=course,enrolled_at=timezone.now()
+                        user_id=student, course_id=course
                     )
 
                     if created:
@@ -665,6 +665,7 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
         except Exception as error:
             print("Error:", error)
             return {"errors": ["An unexpected error occurred."]}
+
 
     def delete(self, request):
         try:
