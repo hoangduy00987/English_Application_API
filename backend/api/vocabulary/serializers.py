@@ -645,7 +645,7 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
                 try:
                     student = User.objects.get(email=email)
                     enrollment, created = UserCourseEnrollment.objects.get_or_create(
-                        user_id=student, course_id=course
+                        user_id=student, course_id=course,enrolled_at=timezone.now()
                     )
 
                     if created:
