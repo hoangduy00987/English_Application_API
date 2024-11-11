@@ -644,6 +644,10 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
             for email in emails:
                 try:
                     student = User.objects.get(email=email)
+                    if UserCourseEnrollment.objects.filter(user=student, course=course).exists():
+                        results["errors"].append(
+                            f"User with email {email} is already enrolled in course {course_id}."
+                        )
                     enrollment, created = UserCourseEnrollment.objects.get_or_create(
                         user_id=student, course_id=course,enrolled_at=timezone.now()
                     )
