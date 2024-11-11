@@ -644,8 +644,8 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
             for email in emails:
                 try:
                     student = User.objects.get(email=email)
-                    # Kiểm tra xem sinh viên đã được ghi danh chưa
-                    if UserCourseEnrollment.objects.filter(user=student, course=course).exists():
+                    # Kiểm tra xem sinh viên đã được ghi danh chưa với tên trường đúng
+                    if UserCourseEnrollment.objects.filter(user_id=student, course_id=course).exists():
                         results["errors"].append(
                             f"User with email {email} is already enrolled in course {course_id}."
                         )
@@ -666,6 +666,8 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
         except Exception as error:
             print("Error:", error)
             return {"errors": ["An unexpected error occurred."]}
+
+
 
 
     def delete(self, request):
