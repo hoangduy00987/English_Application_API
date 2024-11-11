@@ -652,7 +652,7 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
                     else:
                         # Tạo bản ghi mới nếu chưa tồn tại
                         UserCourseEnrollment.objects.create(
-                            user=student, course=course, enrolled_at=timezone.now()
+                            user_id=student, course_id=course, enrolled_at=timezone.now()
                         )
                         results["enrolled_students"].append(email)
 
