@@ -60,14 +60,9 @@ class StudentTopicViewSet(viewsets.ReadOnlyModelViewSet):
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
             course = Course.objects.get(id=course_id, is_deleted=False)
-            is_teacher = course.teacher_id.id == request.user.id
-            if is_teacher:
-                serializer = TeacherCourseSerializers(course, context={'request': request})
-            else:
-                serializer = UserCourseSerializers(course, context={'request': request})
+            serializer = UserCourseSerializers(course, context={'request': request})
 
             return Response({
-                "is_teacher": is_teacher,
                 "topics": serializer.data
                 
             }, status=status.HTTP_200_OK)
@@ -78,29 +73,29 @@ class StudentTopicViewSet(viewsets.ReadOnlyModelViewSet):
             print("error:", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         
-class TeacherTopicViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [IsAdminUser]
-    pagination_class = HistoryLogPagination
+# class TeacherTopicViewSet(viewsets.ReadOnlyModelViewSet):
+#     permission_classes = [IsAdminUser]
+#     pagination_class = HistoryLogPagination
 
-    @action(methods=['GET'], detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
-    def topic_user_get_all(self, request):
-        try:
-            course_id = request.query_params.get("course_id")
-            if not course_id:
-                return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+#     @action(methods=['GET'], detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
+#     def topic_user_get_all(self, request):
+#         try:
+#             course_id = request.query_params.get("course_id")
+#             if not course_id:
+#                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            course = Course.objects.get(id=course_id, is_deleted=False)
-            serializer = TeacherCourseSerializers(course, context={'request': request})
+#             course = Course.objects.get(id=course_id, is_deleted=False)
+#             serializer = TeacherCourseSerializers(course, context={'request': request})
 
-            return Response({
-                "topics": serializer.data
-            }, status=status.HTTP_200_OK)
+#             return Response({
+#                 "topics": serializer.data
+#             }, status=status.HTTP_200_OK)
 
-        except Course.DoesNotExist:
-            return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as error:
-            print("error:", error)
-            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+#         except Course.DoesNotExist:
+#             return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)
+#         except Exception as error:
+#             print("error:", error)
+#             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 #Get vocabuylray to learn
