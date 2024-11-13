@@ -127,15 +127,13 @@ class UserVocabularyProcessSerializers(serializers.ModelSerializer):
     def save(self,request):
         try:
             vocabulary_id = self.validated_data['vocabulary_id']
-            learned_at = timezone.localtime(timezone.now()) # Now
-            next_review_at = learned_at + timedelta(days=1) # Review after 24h
+            last_learned_at = timezone.now()
 
             return UserVocabularyProcess.objects.create(
                 user_id=request.user,
                 vocabulary_id=vocabulary_id, 
                 is_learned=True, 
-                learned_at=learned_at,
-                next_review_at=next_review_at
+                last_learned_at=last_learned_at,
             )
         except Exception as error:
             print("UserVocabularyProcessSerializers_save_error: ", error)
@@ -188,12 +186,6 @@ class VocabularySerializer(serializers.ModelSerializer):
         model = Vocabulary
         fields = ['id', 'word', 'meaning']
 
-class VocabularyNeedReviewSerializer(serializers.ModelSerializer):
-    vocabularies = VocabularySerializer(source='vocabulary_id') 
-
-    class Meta:
-        model = UserVocabularyProcess
-        fields = ['id','vocabularies', 'last_learned_at', 'is_need_review']
 
 #==========ADMIN==========
 class CourseSerializers(serializers.ModelSerializer):
@@ -644,7 +636,6 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
             for email in emails:
                 try:
                     student = User.objects.get(email=email)
-                    # Kiểm tra xem sinh viên đã được ghi danh chưa với tên trường đúng
                     if UserCourseEnrollment.objects.filter(user_id=student, course_id=course).exists():
                         results["errors"].append(
                             f"User with email {email} is already enrolled in course {course_id}."
@@ -702,3 +693,4 @@ class StudentSerializer(serializers.ModelSerializer):
 
         except UserCourseEnrollment.DoesNotExist:
             return None
+        
