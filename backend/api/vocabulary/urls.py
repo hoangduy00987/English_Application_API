@@ -62,7 +62,9 @@ admin_vocabulary_delete_by_id = AdminVocabularyViewSet.as_view(
 user_learn_vocabulary_post = UserVocabularyProcessViewSet.as_view(
     {'post':'user_learn_vocabulary_post'}
 )
-
+user_skip_vocabulary = UserVocabularyProcessViewSet.as_view(
+    {'post':'user_skip_vocabulary'}
+)
 set_next_review = UserVocabularyProcessViewSet.as_view(
     {'post':'set_next_review'}
 )
@@ -135,7 +137,7 @@ urlpatterns = [
     path('user_learn_vocabulary_get/', user_learn_vocabulary_get, name='user_learn_vocabulary_get'),
     path('user_learn_vocabulary_post/', user_learn_vocabulary_post, name='user_learn_vocabulary_post'),
     path('vocabulary_get_all/', UserListVocabularyViewSet.as_view(), name="vocabulary_get_all"),
-    path('vocabulary_need_review_get_all/', ReviewVocabularyViewSet.as_view(), name="vocabulary_need_review_get_all"),
+ 
     path('admin_vocabulary_add/', admin_vocabulary_add, name='admin_vocabulary_add'),
     path('admin_vocabulary_update_by_id/', admin_vocabulary_update_by_id, name='admin_vocabulary_update_by_id'),
     path('admin_vocabulary_delete_by_id/', admin_vocabulary_delete_by_id, name='admin_vocabulary_delete_by_id'),
@@ -161,5 +163,7 @@ urlpatterns = [
     path('delete_student_from_course/',delete_student_from_course),
     path('enroll_student/',enroll_student),
     path('get_all_students_from_course/',get_all_students_from_course),
-    path('detect_audio/',SpeechToTextAPIView.as_view(),name='detect_audio')
+    path('detect_audio/',SpeechToTextAPIView.as_view(),name='detect_audio'),
+    #VocabularyNeedReview
+    path('vocabularies_need_review/',VocabularyNeedReviewView.as_view(),name='vocabularies_need_review')
 ]

@@ -98,7 +98,7 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
                 serializer = self.serializer_class(remaining_vocab, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                next_topic = Topic.objects.filter(order__gt=topic.order,
+                next_topic = Topic.objects.filter(id__gt=topic.id,
                                                        is_deleted=False, is_public=True).first()
                 print(next_topic)
                 if next_topic:
@@ -140,12 +140,11 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
             ).first()
 
             if user_vocab_process:
-                # update review_count
                 user_vocab_process.review_count = (user_vocab_process.review_count or 0) + 1
+                user_vocab_process.is_need_review = False
                 user_vocab_process.save()
                 return Response({'message':'You have finished reviewing this word.'}, status=status.HTTP_200_OK)
             else:
-                # if none, create new record
                 serializer = self.serializer_class(data=request.data)
                 if serializer.is_valid():
                     serializer.save(request=request)
@@ -209,6 +208,27 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
         except Exception as error:
             print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(methods=['POST'], detail=False, url_path="user_skip_vocabulary", url_name="user_skip_vocabulary")
+    def user_skip_vocabulary(self, request):
+        try:
+            vocabulary_id = request.data.get('vocabulary_id')
+            if not vocabulary_id:
+                return Response({'message':'Vocabulary is required'},status=status.HTTP_400_BAD_REQUEST)
+            user_vocabulary_process, created = UserVocabularyProcess.objects.get_or_create(
+                user_id = request.user,
+                vocabulary_id = vocabulary_id,
+                defaults={'is_skipped': True}
+            )
+            if not created:
+                user_vocabulary_process.is_skipped = True
+                user_vocabulary_process.save()
+            return Response({'message':'Word has been successfuly skipped'},status=status.HTTP_200_OK)
+        except Exception as error:
+            return Response({'message':str(error)},status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
 #get all vocabulary of topic
 class UserListVocabularyViewSet(APIView):
@@ -228,25 +248,7 @@ class UserListVocabularyViewSet(APIView):
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         
 
-class ReviewVocabularyViewSet(APIView):
-    serializer_class = VocabularyNeedReviewSerializer
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        try:
-            queryset = UserVocabularyProcess.objects.filter(user_id=request.user, is_need_review=True)
-
-            if not queryset.exists():
-                return Response({"detail": "No vocabulary found for review."}, status=status.HTTP_404_NOT_FOUND)
-            
-            serializer = self.serializer_class(queryset, many=True)
-        
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    
 
 #============Admin==========
 class AdminManageTopicViewset(viewsets.ModelViewSet):
@@ -257,7 +259,7 @@ class AdminManageTopicViewset(viewsets.ModelViewSet):
     @action(methods=["GET"], detail=False, url_path="admin_topic_get_all", url_name="admin_topic_get_all")
     def admin_topic_get_all(self, request):
         try:
-            queryset = Topic.objects.filter(is_deleted=False).order_by("order")
+            queryset = Topic.objects.filter(is_deleted=False).order_by("id")
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -688,22 +690,25 @@ class SpeechToTextAPIView(APIView):
             self.model = self.model.to("cuda")  # Đưa mô hình vào GPU
 
     def post(self, request):
-        serializer = AudioFileSerializer(data=request.data)
-        if serializer.is_valid():
-            audio_file = serializer.validated_data['file']
-            input_audio, _ = librosa.load(audio_file, sr=16000)
+        try:
+            serializer = AudioFileSerializer(data=request.data)
+            if serializer.is_valid():
+                audio_file = serializer.validated_data['file']
+                input_audio, _ = librosa.load(audio_file, sr=16000)
 
-            input_values = self.tokenizer(input_audio, return_tensors="pt").input_values
-            if torch.cuda.is_available():
-                input_values = input_values.to("cuda")  # Đưa dữ liệu vào GPU
+                input_values = self.tokenizer(input_audio, return_tensors="pt").input_values
+                if torch.cuda.is_available():
+                    input_values = input_values.to("cuda")  # Đưa dữ liệu vào GPU
 
-            with torch.no_grad():
-                logits = self.model(input_values).logits
-                predicted_ids = torch.argmax(logits, dim=-1)
-                transcription = self.tokenizer.batch_decode(predicted_ids)[0]
+                with torch.no_grad():
+                    logits = self.model(input_values).logits
+                    predicted_ids = torch.argmax(logits, dim=-1)
+                    transcription = self.tokenizer.batch_decode(predicted_ids)[0]
 
-            return Response({"transcription": transcription}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"transcription": transcription}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 class AdminCourseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
@@ -723,3 +728,29 @@ class AdminCourseViewSet(viewsets.ModelViewSet):
         except Exception as error:
             print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VocabularyNeedReviewView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            vocabularies = UserVocabularyProcess.objects.filter(user_id=request.user, is_need_review=True,is_skipped=False)
+            
+            vocabularies_list = []
+            for process in vocabularies:
+                vocabulary = process.vocabulary_id
+                serializer = LearnVocabularySerializers(vocabulary)
+                
+                vocabularies_list.append(serializer.data)
+            random_vocabulary_list = random.sample(vocabularies_list, 5) if len(vocabularies_list) >= 5 else vocabularies_list
+            vocabularies_data = {
+                'total_word': len(vocabularies_list),
+                'vocabularies': random_vocabulary_list
+            }
+
+            return Response(vocabularies_data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    

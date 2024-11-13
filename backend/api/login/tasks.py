@@ -1,33 +1,22 @@
 from celery import shared_task
+from django.core.mail import send_mail
 from django.utils import timezone
 from datetime import timedelta
-from ..submodels.models_user import UserActivity
-from .notifications import push_notification, send_notification_email, check_and_update_tokens
-import asyncio
+from django.contrib.auth.models import User
+from django.conf import settings
 
 @shared_task
-def check_and_send_notification():
-    duration = timezone.now() - timedelta(minutes=10)
-    inactive_users = UserActivity.objects.filter(last_activity__lt=duration)
+def send_reminder_email():
+    three_days_ago = timezone.now() - timedelta(seconds=30)
+    inactive_users = User.objects.filter(last_login__lt=three_days_ago)
 
-    for user_activity in inactive_users:
-        if user_activity.expo_push_token:
-            push_notification(
-                to=user_activity.expo_push_token,
-                title='Hello bạn',
-                body='Vào mà học tiếng Anh đi đừng có mà lười! Định trốn đến khi nào?'
-            )
-        print('start')
-        send_notification_email(
-            subject='Nhắc nhở việc học tiếng Anh',
-            message='Vào mà học tiếng Anh đi đừng có mà lười! Định trốn đến khi nào?',
-            to=user_activity.user.email
+    for user in inactive_users:
+        # Gửi email thông báo cho người dùng
+        send_mail(
+            'We Miss You!',
+            'It has been 3 days since your last login. Come back and continue your learning!',
+            settings.EMAIL_HOST_USER,
+            [user.email],
+            fail_silently=False,
         )
-        print('end')
-
-@shared_task
-def periodic_token_check():
-    # Get all tokens from database
-    tokens = UserActivity.objects.exclude(expo_push_token__isnull=True).values_list('expo_push_token', flat=True)
-    # Run async function in sync environment of Celery
-    asyncio.run(check_and_update_tokens(list(tokens)))
+    return f"Sent reminder emails to {inactive_users.count()} users."

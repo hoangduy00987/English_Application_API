@@ -105,6 +105,8 @@ class RegisterView(APIView):
 
                 refresh = RefreshToken.for_user(user)
                 profile, created = Profile.objects.get_or_create(user=user)
+                profile.last_login = timezone.now()
+                profile.save()
                 tokens = {
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
@@ -132,7 +134,7 @@ class LoginView(APIView):
                     {
                         'refresh': str(refresh),
                         'access': str(refresh.access_token),
-                        'is_superuser': user.is_superuser  # Thêm thông tin is_superuser vào phản hồi
+                        'is_superuser': user.is_superuser 
                     },
                     status=status.HTTP_200_OK
                 )
@@ -263,24 +265,3 @@ class PasswordResetConfirmView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class HelloWorld(APIView):
-    def get(self, request):
-        return Response({"message":"Hello World"})
-    
-class Success(APIView):
-    def get(self, request):
-        return Response({"message":"Chuc mung ban da successfuly manage exercise"})
-    
-
-# Update push token view
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def update_push_token(request):
-    token = request.data.get('push_token')
-    if token:
-        UserActivity.objects.update_or_create(
-            user=request.user,
-            defaults={'expo_push_token': token}
-        )
-        return Response({"message": "Push token updated."})
-    return Response({"error": "No push token provided."}, status=status.HTTP_400_BAD_REQUEST)

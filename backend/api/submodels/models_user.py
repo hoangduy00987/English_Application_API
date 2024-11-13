@@ -6,6 +6,7 @@ from datetime import datetime
 class Profile(models.Model):
     user = models.OneToOneField(User, related_name='user', on_delete=models.CASCADE)
     is_first_login = models.BooleanField(default=True)
+    last_login = models.DateTimeField(null=True)
     full_name = models.CharField(max_length=255)
     gender = models.BooleanField(default=False)
     english_level = models.CharField(max_length=100,null=True,blank=True)
@@ -26,10 +27,3 @@ class PasswordResetToken(models.Model):
     def __str__(self):
         return f'{self.uid} - {self.token}'
     
-class UserActivity(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_w_activity')
-    last_activity = models.DateTimeField(auto_now=True)
-    expo_push_token = models.CharField(max_length=255, null=True, blank=True)
-
-    def __str__(self):
-        return self.user.email + " Last activity: " + str(self.last_activity)

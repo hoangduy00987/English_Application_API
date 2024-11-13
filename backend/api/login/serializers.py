@@ -7,6 +7,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework.response import Response
 from rest_framework import status
+from django.utils import timezone
 
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = TokenRefreshSerializer
@@ -72,6 +73,7 @@ class LoginSerializers(serializers.Serializer):
             user = authenticate(username=username, password=password)
             if user:
                 if not user.is_active:
+                    user.last_login = timezone.now()
                     raise AuthenticationFailed('User account is disabled.')
                 return {'user': user}
             else:

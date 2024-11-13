@@ -25,13 +25,10 @@ class Topic(models.Model):
     course_id = models.ForeignKey(Course,on_delete=models.CASCADE,null=True)
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='topic_image/', blank=True, null=True)
-    is_locked = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    order = models.IntegerField(null=True, blank=False, unique=True)
-    times_studied = models.IntegerField(null=True)
     
     def __str__(self) -> str:
         return self.name
@@ -65,13 +62,13 @@ class Vocabulary(models.Model):
 class UserVocabularyProcess(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     vocabulary_id = models.ForeignKey(Vocabulary, related_name="vocab_processes", on_delete=models.CASCADE)
-    learned_at = models.DateTimeField(null=True)
     review_count = models.IntegerField(null=True)
     point = models.IntegerField(null=True,blank=True)
     next_review_at  =  models.DateTimeField(null=True)
     is_learned = models.BooleanField(null=True)
     last_learned_at = models.DateTimeField(null=True)
     is_need_review = models.BooleanField(default=False)
+    is_skipped = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.vocabulary_id.word
