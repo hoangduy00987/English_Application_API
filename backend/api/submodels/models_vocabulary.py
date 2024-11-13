@@ -8,7 +8,6 @@ class Course(models.Model):
     name = models.CharField(max_length=255,null=True)
     description = models.TextField(null=True)
     image = models.ImageField(upload_to='course_imgae/',null=True)
-    teacher_id = models.ForeignKey(User,related_name='teacher' ,on_delete=models.CASCADE,null=True,blank=True)
     is_public = models.BooleanField(null=True)
     is_deleted = models.BooleanField(null=True)
     def __str__(self) -> str:
