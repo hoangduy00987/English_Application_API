@@ -4,38 +4,38 @@ from .views import *
 
 #Course
 
-get_all_course_public = CourseViewSet.as_view(
+get_all_course_public = TeacherCourseViewSet.as_view(
     {'get':'get_all_course_public'}
 )
-get_all_my_course_and_enrolled = CourseViewSet.as_view(
-    {'get':'get_all_my_course_and_enrolled'}
+get_all_course_enrolled = StudentCourseViewSet.as_view(
+    {'get':'get_all_course_enrolled'}
 )
-course_add = CourseViewSet.as_view(
+course_add = TeacherCourseViewSet.as_view(
     {'post':'course_add'}
 )
-course_update_by_id = CourseViewSet.as_view(
+course_update_by_id = TeacherCourseViewSet.as_view(
     {'patch':'course_update_by_id'}
 )
-course_delete_by_id = CourseViewSet.as_view(
+course_delete_by_id = TeacherCourseViewSet.as_view(
     {'delete':'course_delete_by_id'}
 )
 #Topic
-topic_user_get_all = UserTopicViewSet.as_view(
+topic_user_get_all = StudentTopicViewSet.as_view(
     {'get':'topic_user_get_all'}
 )
-admin_topic_get_all = AdminManageTopicViewset.as_view(
+admin_topic_get_all = TeacherManageTopicViewset.as_view(
     {'get':'admin_topic_get_all'}
 )
-admin_topic_get_by_id = AdminManageTopicViewset.as_view(
+admin_topic_get_by_id = TeacherManageTopicViewset.as_view(
     {'get':'admin_topic_get_by_id'}
 )
-admin_topic_add = AdminManageTopicViewset.as_view(
+admin_topic_add = TeacherManageTopicViewset.as_view(
     {'post':'admin_topic_add'}
 )
-admin_topic_update_by_id = AdminManageTopicViewset.as_view(
+admin_topic_update_by_id = TeacherManageTopicViewset.as_view(
     {'patch':'admin_topic_update_by_id'}
 )
-admin_topic_delete_by_id = AdminManageTopicViewset.as_view(
+admin_topic_delete_by_id = TeacherManageTopicViewset.as_view(
     {'delete':'admin_topic_delete_by_id'}
 )
 #Vocabulary
@@ -43,19 +43,19 @@ user_learn_vocabulary_get = UserVocabularyViewSet.as_view(
     {'get':'user_learn_vocabulary_get'}
 )
 
-admin_vocabulary_get_all = AdminListVocabularyViewSet.as_view(
+admin_vocabulary_get_all = TeacherListVocabularyViewSet.as_view(
     {'get':'admin_vocabulary_get_all'}
 )
-admin_vocabulary_get_by_id = AdminVocabularyViewSet.as_view(
+admin_vocabulary_get_by_id = TeacherVocabularyViewSet.as_view(
     {'get':'admin_vocabulary_get_by_id'}
 )
-admin_vocabulary_add = AdminVocabularyViewSet.as_view(
+admin_vocabulary_add = TeacherVocabularyViewSet.as_view(
     {'post':'admin_vocabulary_add'}
 )
-admin_vocabulary_update_by_id = AdminVocabularyViewSet.as_view(
+admin_vocabulary_update_by_id = TeacherVocabularyViewSet.as_view(
     {'patch':'admin_vocabulary_update_by_id'}
 )
-admin_vocabulary_delete_by_id = AdminVocabularyViewSet.as_view(
+admin_vocabulary_delete_by_id = TeacherVocabularyViewSet.as_view(
     {'delete':'admin_vocabulary_delete_by_id'}
 )
 #UserVocabularyProcess
@@ -72,49 +72,49 @@ user_vocab_process = UserVocabularyProcessViewSet.as_view(
     {'get':'user_vocab_process'}
 )
 #MiniExercise
-admin_get_all_fill_in_exercises = AdminMiniExerciseViewSet.as_view(
+admin_get_all_fill_in_exercises = TeacherMiniExerciseViewSet.as_view(
     {'get':'admin_get_all_fill_in_exercises'}
 )
-admin_get_fill_in_exercise_by_id = AdminFillinAnswerExerciseViewSet.as_view(
+admin_get_fill_in_exercise_by_id = TeacherFillinAnswerExerciseViewSet.as_view(
     {'get':'admin_get_fill_in_exercise_by_id'}
 )
-admin_fill_in_exercise_add = AdminManageFillinExerciseViewSet.as_view(
+admin_fill_in_exercise_add = TeacherManageFillinExerciseViewSet.as_view(
     {'post':'admin_fill_in_exercise_add'}
 )
-admin_fill_in_exercise_update_by_id = AdminManageFillinExerciseViewSet.as_view(
+admin_fill_in_exercise_update_by_id = TeacherManageFillinExerciseViewSet.as_view(
     {'patch':'admin_fill_in_exercise_update_by_id'}
 )
-admin_fill_in_exercise_delete_by_id = AdminManageFillinExerciseViewSet.as_view(
+admin_fill_in_exercise_delete_by_id = TeacherManageFillinExerciseViewSet.as_view(
     {'delete':'admin_fill_in_exercise_delete_by_id'}
 )
-admin_get_all_multiple_choice_exercises = AdminMiniExerciseViewSet.as_view(
+admin_get_all_multiple_choice_exercises = TeacherMiniExerciseViewSet.as_view(
     {'get':'admin_get_all_multiple_choice_exercises'}
 )
-admin_get_multiple_choices_exercise_by_id = AdminMultipleChoicesAnswerExerciseViewSet.as_view(
+admin_get_multiple_choices_exercise_by_id = TeacherMultipleChoicesAnswerExerciseViewSet.as_view(
     {'get':'admin_get_multiple_choices_exercise_by_id'}
 )
-admin_multiple_choices_exercise_add = AdminManageMultipleChoicesExerciseViewSet.as_view(
+admin_multiple_choices_exercise_add = TeacherManageMultipleChoicesExerciseViewSet.as_view(
     {'post':'admin_multiple_choices_exercise_add'}
 )
-admin_multiple_choices_exercise_update_by_id = AdminManageMultipleChoicesExerciseViewSet.as_view(
+admin_multiple_choices_exercise_update_by_id = TeacherManageMultipleChoicesExerciseViewSet.as_view(
     {'patch':'admin_multiple_choices_exercise_update_by_id'}
 )
-admin_multiple_choices_exercise_delete_by_id = AdminManageMultipleChoicesExerciseViewSet.as_view(
+admin_multiple_choices_exercise_delete_by_id = TeacherManageMultipleChoicesExerciseViewSet.as_view(
     {'delete':'admin_multiple_choices_exercise_delete_by_id'}
 )
 #AdminFunction
-courses_get_all = AdminCourseViewSet.as_view(
+courses_get_all = TeacherCourseViewSet.as_view(
     {'get':'courses_get_all'}
 )
 #enroll student
  
-enroll_student = UserEnrollCourseView.as_view(
+enroll_student = TeacherEnrollStudentView.as_view(
     {'post':'enroll_student'}
 )
-delete_student_from_course = UserEnrollCourseView.as_view(
+delete_student_from_course = TeacherEnrollStudentView.as_view(
     {'delete':'delete_student_from_course'}
 )
-get_all_students_from_course = UserEnrollCourseView.as_view(
+get_all_students_from_course = TeacherEnrollStudentView.as_view(
     {'get':'get_all_students_from_course'}
 )
 urlpatterns = [
@@ -123,7 +123,7 @@ urlpatterns = [
     #Course
     path('get_all_course_public/', get_all_course_public, name='get_all_course_public'),
     path('course_update_by_id/', course_update_by_id, name='course_update_by_id'),
-    path('get_all_my_course_and_enrolled/', get_all_my_course_and_enrolled, name='get_all_my_course_and_enrolled'),
+    path('get_all_course_enrolled/', get_all_course_enrolled, name='get_all_course_enrolled'),
     path('course_add/', course_add, name='course_add'),
     path('course_delete_by_id/', course_delete_by_id, name='course_delete_by_id'),
     # Topic
@@ -165,5 +165,5 @@ urlpatterns = [
     path('get_all_students_from_course/',get_all_students_from_course),
     path('detect_audio/',SpeechToTextAPIView.as_view(),name='detect_audio'),
     #VocabularyNeedReview
-    path('vocabularies_need_review/',VocabularyNeedReviewView.as_view(),name='vocabularies_need_review')
+    path('vocabularies_need_review/',StudentVocabularyNeedReviewView.as_view(),name='vocabularies_need_review')
 ]
