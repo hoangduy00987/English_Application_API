@@ -23,7 +23,7 @@ class UserTopicSerializers(serializers.ModelSerializer):
     num_words_learned = serializers.SerializerMethodField()
     class Meta:
         model = Topic
-        fields = ['id','order','name', 'image','num_words','num_words_learned','is_locked']
+        fields = ['id','name', 'image','num_words','num_words_learned','is_locked']
 
     def get_is_locked(self, obj):
         user = self.context['request'].user
@@ -46,9 +46,9 @@ class UserTopicSerializers(serializers.ModelSerializer):
         
     def save(self, request):
         name = self.validated_data['name']
-        order = self.validated_data['order']
+        
         image = self.validated_data['image']
-        return Topic.objects.create(name=name,order=order, image=image,created_at=datetime.now())
+        return Topic.objects.create(name=name, image=image,created_at=datetime.now())
         
 class UserCourseSerializers(serializers.ModelSerializer):
     list_topic = serializers.SerializerMethodField()
@@ -57,7 +57,7 @@ class UserCourseSerializers(serializers.ModelSerializer):
         fields = ['id','name','image','description','list_topic']    
 
     def get_list_topic(self, obj):
-        topics = Topic.objects.filter(course_id=obj.id, is_deleted=False, is_public=True).order_by('order')
+        topics = Topic.objects.filter(course_id=obj.id, is_deleted=False, is_public=True).order_by('id')
 
         if topics.exists():
             first_topic = topics.first()
@@ -79,7 +79,7 @@ class TeacherCourseSerializers(serializers.ModelSerializer):
         fields = ['id','name','image','description','list_topic']    
 
     def get_list_topic(self, obj):
-        topics = Topic.objects.filter(course_id=obj.id, is_deleted=False).order_by('order')
+        topics = Topic.objects.filter(course_id=obj.id, is_deleted=False).order_by('id')
         return AdminTopicSerializers(topics, many=True, context=self.context).data
 
 class VocabularySerializers(serializers.ModelSerializer):
@@ -248,13 +248,12 @@ class CourseSerializers(serializers.ModelSerializer):
         
 class AdminTopicSerializers(serializers.ModelSerializer):
     name = serializers.CharField(required=False)
-    order = serializers.IntegerField(required=False)
     image = serializers.ImageField(required=False)
     course_id = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all())
     num_words = serializers.SerializerMethodField()
     class Meta:
         model = Topic
-        fields = ['id','course_id','order','name', 'image','num_words','is_public']
+        fields = ['id','course_id','name', 'image','num_words','is_public']
     def get_num_words(self, obj):
         return obj.vocabularies.filter(is_deleted=False).count()
     
@@ -262,9 +261,8 @@ class AdminTopicSerializers(serializers.ModelSerializer):
         try:
             course_id = self.validated_data['course_id']
             name = self.validated_data['name']
-            order = self.validated_data['order']
             image = self.validated_data['image']
-            return Topic.objects.create(course_id=course_id,name=name,order=order, image=image,created_at=datetime.now())
+            return Topic.objects.create(course_id=course_id,name=name, image=image,created_at=datetime.now())
         except Exception as error:
             print("TopicSerializers_save_error: ", error)
             return None
@@ -276,7 +274,6 @@ class AdminTopicSerializers(serializers.ModelSerializer):
             if model.is_deleted:
                 raise serializers.ValidationError("Topic has been deleted.")
             model.name = validated_data.get('name', model.name)
-            model.order = validated_data.get('order', model.order)
             model.image = validated_data.get('image', model.image)
             model.is_public = validated_data.get('is_public', model.is_public)
             model.save()
