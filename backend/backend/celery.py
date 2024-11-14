@@ -11,10 +11,14 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'update-review-status-every-day': {
         'task': 'api.vocabulary.tasks.update_review_status',
-        'schedule': timedelta(days=1),  
+        'schedule': timedelta(days=1),
     },
     'send-reminder-email-every-day': {
         'task': 'api.login.tasks.send_reminder_email',
-        'schedule': timedelta(seconds=30)  
+        'schedule': timedelta(minutes=5),
     },
+    'check-expo-tokens-weekly': {
+        'task': 'api.login.tasks.periodic_token_check',
+        'schedule': crontab(day_of_week=1, hour=0, minute=0),
+    }
 }
