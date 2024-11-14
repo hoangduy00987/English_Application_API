@@ -3,34 +3,10 @@ from django.contrib.auth.models import User
 from ..submodels.models_user import *
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from rest_framework.response import Response
-from rest_framework import status
 from django.utils import timezone
 
-class CustomTokenRefreshView(TokenRefreshView):
-    serializer_class = TokenRefreshSerializer
 
-    def post(self, request, *args, **kwargs):
-        # Lấy refresh token từ request body
-        serializer = self.get_serializer(data=request.data)
-
-        try:
-            # Kiểm tra tính hợp lệ của refresh token
-            serializer.is_valid(raise_exception=True)
-        except Exception as e:
-            # Trả về lỗi nếu refresh token không hợp lệ hoặc hết hạn
-            return Response(
-                {"detail": "Refresh token không hợp lệ hoặc đã hết hạn."}, 
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        # Lấy dữ liệu sau khi kiểm tra thành công (gồm access token mới)
-        response_data = serializer.validated_data
-
-        return Response(response_data, status=status.HTTP_200_OK)
-    
 class RegisterSerializers(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True,write_only=True)

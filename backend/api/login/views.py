@@ -105,7 +105,7 @@ class RegisterView(APIView):
 
                 refresh = RefreshToken.for_user(user)
                 profile, created = Profile.objects.get_or_create(user=user)
-                profile.last_login = timezone.now()
+                profile.last_activity = timezone.now()
                 profile.save()
                 tokens = {
                     'refresh': str(refresh),
@@ -264,4 +264,17 @@ class PasswordResetConfirmView(APIView):
             #hello
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
+# Update push token view
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_push_token(request):
+    token = request.data.get('push_token')
+    if token:
+        Profile.objects.update_or_create(
+            user=request.user,
+            defaults={'expo_push_token': token}
+        )
+        return Response({"message": "Push token updated."})
+    return Response({"error": "No push token provided."}, status=status.HTTP_400_BAD_REQUEST)
