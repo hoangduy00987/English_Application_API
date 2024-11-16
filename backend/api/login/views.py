@@ -11,6 +11,7 @@ from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 from ..submodels.models_user import *
+from ..submodels.models_activity import *
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
@@ -51,7 +52,7 @@ class GoogleView(APIView):
         response = requests.get('https://www.googleapis.com/oauth2/v3/userinfo', params=payload)
         
         if response.status_code != 200:
-            return Response({'message': 'error  connecting to google'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'error connecting to google'}, status=status.HTTP_400_BAD_REQUEST)
         
         data = response.json()
         
@@ -74,10 +75,12 @@ class GoogleView(APIView):
         is_first_login = False
         if created:
             profile = Profile.objects.create(
-            user=user,created_at=datetime.now()
+                user=user,created_at=datetime.now()
             )
             is_first_login = profile.is_first_login
-            profile.save()    
+            profile.save()
+        
+        streak, _ = Streak.objects.get_or_create(user=user)
         # Create And Response token to user
         token = RefreshToken.for_user(user)
         response_data = {
@@ -107,6 +110,7 @@ class RegisterView(APIView):
                 profile, created = Profile.objects.get_or_create(user=user)
                 profile.last_activity = timezone.now()
                 profile.save()
+                streak, _ = Streak.objects.get_or_create(user=user)
                 tokens = {
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
@@ -129,7 +133,6 @@ class LoginView(APIView):
                 user = serializer.validated_data['user']
                 
                 refresh = RefreshToken.for_user(user)
-                profile, created = Profile.objects.get_or_create(user=user)
                 return Response(
                     {
                         'refresh': str(refresh),
