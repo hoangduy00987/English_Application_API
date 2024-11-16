@@ -37,6 +37,8 @@ class UserTopicProgress(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     topic_id = models.ForeignKey(Topic, related_name='topic',on_delete=models.CASCADE,null=True)
     is_locked = models.BooleanField(default=True)
+    is_completed = models.BooleanField(default=False)
+
 
     def __str__(self) -> str:
         return  self.topic_id.name
@@ -62,7 +64,6 @@ class UserVocabularyProcess(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     vocabulary_id = models.ForeignKey(Vocabulary, related_name="vocab_processes", on_delete=models.CASCADE)
     review_count = models.IntegerField(null=True)
-    point = models.IntegerField(null=True,blank=True)
     next_review_at  =  models.DateTimeField(null=True)
     is_learned = models.BooleanField(null=True)
     last_learned_at = models.DateTimeField(null=True)
@@ -111,3 +112,17 @@ class MiniExerciseMultipleChoicesAnswer(models.Model):
 
     def __str__(self) -> str:
         return self.exercise_id.vocabulary_id.word + ': ' + self.exercise_id.content + '-' + self.answer + ': ' + str(self.is_correct)
+
+class LeaderBoard(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True,blank=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
+    total_points = models.IntegerField(default=0)
+    weekly_points = models.IntegerField(default=0)
+    monthly_points = models.IntegerField(default=0)
+    year_week = models.IntegerField(default=1)
+    year_month = models.IntegerField(default=1)
+    update_at = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return f"Leaderboard: {self.user.username}  - {self.total_points} points"
+    #

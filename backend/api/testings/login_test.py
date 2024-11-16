@@ -3,7 +3,7 @@ from rest_framework import status
 from django.urls import reverse
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from ..submodels.models_user import Profile, PasswordResetToken, UserActivity
+from ..submodels.models_user import Profile, PasswordResetToken
 from django.test import override_settings
 from io import BytesIO
 from PIL import Image
