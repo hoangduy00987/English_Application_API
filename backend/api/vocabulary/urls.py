@@ -23,8 +23,8 @@ course_delete_by_id = TeacherCourseViewSet.as_view(
 topic_user_get_all = StudentTopicViewSet.as_view(
     {'get':'topic_user_get_all'}
 )
-admin_topic_get_all = TeacherManageTopicViewset.as_view(
-    {'get':'admin_topic_get_all'}
+topic_admin_get_all = TeacherListTopicView.as_view(
+    {'get':'topic_admin_get_all'}
 )
 admin_topic_get_by_id = TeacherManageTopicViewset.as_view(
     {'get':'admin_topic_get_by_id'}
@@ -128,7 +128,7 @@ urlpatterns = [
     path('course_delete_by_id/', course_delete_by_id, name='course_delete_by_id'),
     # Topic
     path('topic_user_get_all/', topic_user_get_all, name='topic_user_get_all'),
-    path('admin_topic_get_all/', admin_topic_get_all, name='admin_topic_get_all'),
+    path('topic_admin_get_all/', topic_admin_get_all, name='topic_admin_get_all'),
     path('admin_topic_get_by_id/', admin_topic_get_by_id, name='admin_topic_get_by_id'),
     path('admin_topic_add/', admin_topic_add, name='admin_topic_add'),
     path('admin_topic_update_by_id/', admin_topic_update_by_id, name='admin_topic_update_by_id'),
