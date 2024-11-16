@@ -13,7 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 import random 
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime,timedelta
 from django.db.models import Q
 import torch
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
@@ -46,12 +46,31 @@ class HistoryLogPagination(PageNumberPagination):
             'results': data,
         })
 
+def update_leader_board(user, points, course_id):
+    try:
+        course = Course.objects.get(id=course_id) 
+        
+        leaderboard, created = LeaderBoard.objects.get_or_create(user=user, course=course)
+        
+
+        leaderboard.weekly_points += points
+        leaderboard.monthly_points += points
+        leaderboard.total_points += points
+        leaderboard.update_at = timezone.now()
+
+        
+        leaderboard.save()
+
+    except Course.DoesNotExist:
+        print("Course not found.")
+    except Exception as error:
+        print("Error updating leaderboard: ", error)
 
 # get all topic
 class StudentTopicViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = HistoryLogPagination
-
+    serializer_class = UserCourseSerializers
     @action(methods=['GET'], detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
     def topic_user_get_all(self, request):
         try:
@@ -59,44 +78,23 @@ class StudentTopicViewSet(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            course = Course.objects.get(id=course_id, is_deleted=False)
-            serializer = UserCourseSerializers(course, context={'request': request})
+            course = Course.objects.filter(id=course_id, is_deleted=False)
+            if not course:
+                return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)  
+            page = self.paginate_queryset(course)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
 
-            return Response({
-                "topics": serializer.data
-                
-            }, status=status.HTTP_200_OK)
+            serializer = self.get_serializer(course, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
-        except Course.DoesNotExist:
-            return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print("error:", error)
-            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-        
-# class TeacherTopicViewSet(viewsets.ReadOnlyModelViewSet):
-#     permission_classes = [IsAdminUser]
-#     pagination_class = HistoryLogPagination
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-#     @action(methods=['GET'], detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
-#     def topic_user_get_all(self, request):
-#         try:
-#             course_id = request.query_params.get("course_id")
-#             if not course_id:
-#                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-#             course = Course.objects.get(id=course_id, is_deleted=False)
-#             serializer = TeacherCourseSerializers(course, context={'request': request})
-
-#             return Response({
-#                 "topics": serializer.data
-#             }, status=status.HTTP_200_OK)
-
-#         except Course.DoesNotExist:
-#             return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)
-#         except Exception as error:
-#             print("error:", error)
-#             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-
+    
 
 #Get vocabuylray to learn
 class UserVocabularyViewSet(viewsets.ModelViewSet):
@@ -161,7 +159,11 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
             if user_vocab_process:
                 user_vocab_process.review_count = (user_vocab_process.review_count or 0) + 1
                 user_vocab_process.is_need_review = False
+                user_vocab_process.is_learned = True
+                user_vocab_process.last_learned_at = timezone.now()
                 user_vocab_process.save()
+                
+                update_leader_board(request.user, 5 , user_vocab_process.vocabulary_id.topic_id.course_id.id)
                 return Response({'message':'You have finished reviewing this word.'}, status=status.HTTP_200_OK)
             else:
                 serializer = self.serializer_class(data=request.data)
@@ -232,20 +234,32 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
     def user_skip_vocabulary(self, request):
         try:
             vocabulary_id = request.data.get('vocabulary_id')
+            
             if not vocabulary_id:
-                return Response({'message':'Vocabulary is required'},status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Vocabulary ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Kiểm tra xem Vocabulary có tồn tại hay không
+            try:
+                vocabulary = Vocabulary.objects.get(id=vocabulary_id)
+            except Vocabulary.DoesNotExist:
+                return Response({'message': 'Vocabulary not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Kiểm tra nếu đã tồn tại một bản ghi cho người dùng và từ vựng này
             user_vocabulary_process, created = UserVocabularyProcess.objects.get_or_create(
-                user_id = request.user,
-                vocabulary_id = vocabulary_id,
+                user_id=request.user,
+                vocabulary_id=vocabulary,
                 defaults={'is_skipped': True}
             )
+
+            # Nếu bản ghi đã tồn tại và không phải bản ghi mới, chỉ cần cập nhật is_skipped
             if not created:
                 user_vocabulary_process.is_skipped = True
                 user_vocabulary_process.save()
-            return Response({'message':'Word has been successfuly skipped'},status=status.HTTP_200_OK)
-        except Exception as error:
-            return Response({'message':str(error)},status=status.HTTP_400_BAD_REQUEST)
 
+            return Response({'message': 'Word has been successfully skipped'}, status=status.HTTP_200_OK)
+            
+        except Exception as error:
+            return Response({'message': 'An error occurred.', 'details': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -275,20 +289,6 @@ class TeacherManageTopicViewset(viewsets.ModelViewSet):
     pagination_class = HistoryLogPagination
     permission_classes = [IsAdminUser]
 
-    @action(methods=["GET"], detail=False, url_path="admin_topic_get_all", url_name="admin_topic_get_all")
-    def admin_topic_get_all(self, request):
-        try:
-            queryset = Topic.objects.filter(is_deleted=False).order_by("id")
-            page = self.paginate_queryset(queryset)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
-            serializer = self.serializer_class(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as error:
-            print("error", error)
-            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-    
    
     @action(methods='GET', detail=True, url_path="admin_topic_get_by_id", url_name="admin_topic_get_by_id")
     def admin_topic_get_by_id(self, request):
@@ -571,25 +571,36 @@ class TeacherManageMultipleChoicesExerciseViewSet(viewsets.ModelViewSet):
             print("admin_multiple_choices_exercise_delete_by_id_error:", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
-class TeacherCourseViewSet(viewsets.ModelViewSet):
-    serializer_class = CourseSerializers
+class TeacherListTopicView(viewsets.ModelViewSet):
+    serializer_class = TeacherCourseSerializers
     permission_classes = [IsAdminUser] 
     pagination_class = HistoryLogPagination
-    # @action(methods=["GET"], detail=False, url_path="get_all_course_public", url_name="get_all_course_public")
-    # def get_all_course_public(self, request):
-    #     try:
-    #         queryset = Course.objects.filter(is_deleted=False,is_public=True)
-    #         page = self.paginate_queryset(queryset)
-    #         if page is not None:
-    #             # Truyền context với request vào serializer
-    #             serializer = self.get_serializer(page, many=True, context={'request': request})
-    #             return self.get_paginated_response(serializer.data)
-    #         # Truyền context với request vào serializer
-    #         serializer = self.serializer_class(queryset, many=True, context={'request': request})
-    #         return Response(serializer.data, status=status.HTTP_200_OK)
-    #     except Exception as error:
-    #         print("error", error)
-    #         return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    @action(methods=['GET'], detail=False, url_path="topic_admin_get_all", url_name="topic_admin_get_all")
+    def topic_admin_get_all(self, request):
+        try:
+            course_id = request.query_params.get("course_id")
+            if not course_id:
+                return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            course = Course.objects.filter(id=course_id, is_deleted=False)
+            if not course:
+                return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)  
+            page = self.paginate_queryset(course)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(course, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as error:
+            print("error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TeacherCourseViewSet(viewsets.ModelViewSet):
+    serializer_class = TeacherManageCourseSerializers
+    permission_classes = [IsAdminUser] 
+    pagination_class = HistoryLogPagination
     
     @action(methods="GET", detail=False, url_path="courses_get_all", url_name="courses_get_all")
     def courses_get_all(self, request):
@@ -604,6 +615,7 @@ class TeacherCourseViewSet(viewsets.ModelViewSet):
         except Exception as error:
             print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
 
     @action(methods="POST", detail=False, url_path="course_add", url_name="course_add")
     def course_add(self, request):
@@ -648,11 +660,13 @@ class TeacherCourseViewSet(viewsets.ModelViewSet):
 
 
 class StudentCourseViewSet(viewsets.ModelViewSet):
+    serializer_class = StudentCourseSerializers
+    permission_classes = [IsAuthenticated] 
+    pagination_class = HistoryLogPagination
     @action(methods=["GET"], detail=False, url_path="get_all_course_enrolled", url_name="get_all_course_enrolled")
     def get_all_course_enrolled(self, request):
         try:
             queryset = Course.objects.filter(
-                Q(teacher_id=request.user) | 
                 Q(id__in=UserCourseEnrollment.objects.filter(user_id=request.user).values('course_id')),
                 is_deleted=False
             )
@@ -667,6 +681,22 @@ class StudentCourseViewSet(viewsets.ModelViewSet):
 
         except Exception as error:
             print("error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(methods=["GET"], detail=False, url_path="get_all_course_public", url_name="get_all_course_public")
+    def get_all_course_public(self, request):
+        try:
+            queryset = Course.objects.filter(is_deleted=False,is_public=True)
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                # Truyền context với request vào serializer
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+            # Truyền context với request vào serializer
+            serializer = self.serializer_class(queryset, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
     
     
@@ -749,7 +779,6 @@ class SpeechToTextAPIView(APIView):
     
 
     
-
 class StudentVocabularyNeedReviewView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
@@ -773,4 +802,43 @@ class StudentVocabularyNeedReviewView(APIView):
         except Exception as e:
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-    
+class LeaderBoardView(APIView):
+    def get(self, request):
+        try:
+            course_id = request.query_params.get('course_id')
+            time_frame = request.query_params.get('ranking')
+            now = timezone.now()
+            week = now.isocalendar()[1]
+            month = now.month
+
+            if time_frame not in ['0', '1', '2']:
+                return Response({'message': 'Invalid ranking parameter. Use "0", "1", or "2".'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if time_frame == '0': 
+                leaderboard = LeaderBoard.objects.filter(year_week=week, course=course_id).order_by('-weekly_points')
+            elif time_frame == '1': 
+                leaderboard = LeaderBoard.objects.filter(year_month=month, course=course_id).order_by('-monthly_points')
+            else:
+                leaderboard = LeaderBoard.objects.filter(course=course_id).order_by('-total_points')
+
+            leaderboard_data = []
+            rank = 1
+            for entry in leaderboard:
+                points = entry.weekly_points if time_frame == '0' else entry.monthly_points if time_frame == '1' else entry.total_points
+                avatar_url = entry.user.user.avatar.url if entry.user.user.avatar else None
+                
+                if avatar_url:
+                    avatar_url = request.build_absolute_uri(avatar_url)
+                
+                leaderboard_data.append({
+                    'stt': rank,
+                    'full_name': entry.user.user.full_name,
+                    'avatar': avatar_url,  
+                    'points': points,
+                })
+                rank += 1
+
+            return Response(leaderboard_data, status=status.HTTP_200_OK)
+        
+        except Exception as error:
+            return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
