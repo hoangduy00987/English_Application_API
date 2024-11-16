@@ -70,7 +70,7 @@ def update_leader_board(user, points, course_id):
 class StudentTopicViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = HistoryLogPagination
-
+    serializer_class = UserCourseSerializers
     @action(methods=['GET'], detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
     def topic_user_get_all(self, request):
         try:
@@ -78,44 +78,23 @@ class StudentTopicViewSet(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            course = Course.objects.get(id=course_id, is_deleted=False)
-            serializer = UserCourseSerializers(course, context={'request': request})
+            course = Course.objects.filter(id=course_id, is_deleted=False)
+            if not course:
+                return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)  
+            page = self.paginate_queryset(course)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
 
-            return Response({
-                "topics": serializer.data
-                
-            }, status=status.HTTP_200_OK)
+            serializer = self.get_serializer(course, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
-        except Course.DoesNotExist:
-            return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print("error:", error)
-            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-        
-# class TeacherTopicViewSet(viewsets.ReadOnlyModelViewSet):
-#     permission_classes = [IsAdminUser]
-#     pagination_class = HistoryLogPagination
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-#     @action(methods=['GET'], detail=False, url_path="topic_user_get_all", url_name="topic_user_get_all")
-#     def topic_user_get_all(self, request):
-#         try:
-#             course_id = request.query_params.get("course_id")
-#             if not course_id:
-#                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-#             course = Course.objects.get(id=course_id, is_deleted=False)
-#             serializer = TeacherCourseSerializers(course, context={'request': request})
-
-#             return Response({
-#                 "topics": serializer.data
-#             }, status=status.HTTP_200_OK)
-
-#         except Course.DoesNotExist:
-#             return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)
-#         except Exception as error:
-#             print("error:", error)
-#             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-
+    
 
 #Get vocabuylray to learn
 class UserVocabularyViewSet(viewsets.ModelViewSet):
@@ -310,20 +289,6 @@ class TeacherManageTopicViewset(viewsets.ModelViewSet):
     pagination_class = HistoryLogPagination
     permission_classes = [IsAdminUser]
 
-    @action(methods=["GET"], detail=False, url_path="admin_topic_get_all", url_name="admin_topic_get_all")
-    def admin_topic_get_all(self, request):
-        try:
-            queryset = Topic.objects.filter(is_deleted=False).order_by("id")
-            page = self.paginate_queryset(queryset)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
-            serializer = self.serializer_class(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as error:
-            print("error", error)
-            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-    
    
     @action(methods='GET', detail=True, url_path="admin_topic_get_by_id", url_name="admin_topic_get_by_id")
     def admin_topic_get_by_id(self, request):
@@ -606,8 +571,34 @@ class TeacherManageMultipleChoicesExerciseViewSet(viewsets.ModelViewSet):
             print("admin_multiple_choices_exercise_delete_by_id_error:", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
-class TeacherCourseViewSet(viewsets.ModelViewSet):
+class TeacherListTopicView(viewsets.ModelViewSet):
     serializer_class = TeacherCourseSerializers
+    permission_classes = [IsAdminUser] 
+    pagination_class = HistoryLogPagination
+    @action(methods=['GET'], detail=False, url_path="topic_admin_get_all", url_name="topic_admin_get_all")
+    def topic_admin_get_all(self, request):
+        try:
+            course_id = request.query_params.get("course_id")
+            if not course_id:
+                return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            course = Course.objects.filter(id=course_id, is_deleted=False)
+            if not course:
+                return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)  
+            page = self.paginate_queryset(course)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(course, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as error:
+            print("error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TeacherCourseViewSet(viewsets.ModelViewSet):
+    serializer_class = TeacherManageCourseSerializers
     permission_classes = [IsAdminUser] 
     pagination_class = HistoryLogPagination
     
@@ -624,6 +615,7 @@ class TeacherCourseViewSet(viewsets.ModelViewSet):
         except Exception as error:
             print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    
 
     @action(methods="POST", detail=False, url_path="course_add", url_name="course_add")
     def course_add(self, request):
@@ -670,6 +662,7 @@ class TeacherCourseViewSet(viewsets.ModelViewSet):
 class StudentCourseViewSet(viewsets.ModelViewSet):
     serializer_class = StudentCourseSerializers
     permission_classes = [IsAuthenticated] 
+    pagination_class = HistoryLogPagination
     @action(methods=["GET"], detail=False, url_path="get_all_course_enrolled", url_name="get_all_course_enrolled")
     def get_all_course_enrolled(self, request):
         try:

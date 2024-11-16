@@ -186,7 +186,7 @@ class VocabularySerializer(serializers.ModelSerializer):
 
 
 #==========ADMIN==========
-class TeacherCourseSerializers(serializers.ModelSerializer):
+class TeacherManageCourseSerializers(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ['id','name','image','description','is_public']
@@ -671,10 +671,10 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
 class AudioFileSerializer(serializers.Serializer):
     file = serializers.FileField()
 
-class AdminCourseSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = Course
-        fields = ['id','name','image','description','is_public']
+# class AdminCourseSerializers(serializers.ModelSerializer):
+#     class Meta:
+#         model = Course
+#         fields = ['id','name','image','description','is_public']
 
 class StudentSerializer(serializers.ModelSerializer):
     enrolled_at = serializers.SerializerMethodField()
