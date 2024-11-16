@@ -13,9 +13,7 @@ from django.core.validators import EmailValidator
 from django.core.mail import send_mail, EmailMessage
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from django.utils import timezone
-from datetime import timedelta
-import json
-
+from ..submodels.models_user import *
 #============USER
 class UserTopicSerializers(serializers.ModelSerializer):
     is_locked = serializers.SerializerMethodField()
@@ -188,7 +186,7 @@ class VocabularySerializer(serializers.ModelSerializer):
 
 
 #==========ADMIN==========
-class CourseSerializers(serializers.ModelSerializer):
+class TeacherCourseSerializers(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ['id','name','image','description','is_public']
@@ -199,7 +197,7 @@ class CourseSerializers(serializers.ModelSerializer):
             image = self.validated_data['image']
             description = self.validated_data['description']
             is_public = self.validated_data['is_public']
-            return Course.objects.create(name=name,image=image, description=description,teacher_id=request.user,is_deleted=False,is_public=is_public)
+            return Course.objects.create(name=name,image=image, description=description,is_deleted=False,is_public=is_public)
         except Exception as error:
             print("CourseSerializers_save_error: ", error)
             return None
@@ -680,9 +678,10 @@ class AdminCourseSerializers(serializers.ModelSerializer):
 
 class StudentSerializer(serializers.ModelSerializer):
     enrolled_at = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ["email",'enrolled_at']
+        fields = ["email",'full_name','enrolled_at']
     def get_enrolled_at(self, user):
         try:
             enrollment = UserCourseEnrollment.objects.get(user_id=user)
@@ -690,4 +689,24 @@ class StudentSerializer(serializers.ModelSerializer):
 
         except UserCourseEnrollment.DoesNotExist:
             return None
+    def get_full_name(self, user):
+        try:
+            full_name = Profile.objects.get(user_id=user)
+            return full_name.full_name 
+
+        except Profile.DoesNotExist:
+            return None 
         
+    
+
+class StudentCourseSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ['id','name','image','description']
+
+# class LeaderBoardSerializer(serializers.ModelSerializer):
+#     full_name =  serializers.SerializerMethodField()
+#     avatar = serializers.SerializerMethodField()
+#     class Meta:
+#         model = LeaderBoard
+#         fields = ['full_name','avatar','score']

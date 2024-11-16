@@ -4,11 +4,11 @@ from .views import *
 
 #Course
 
-get_all_course_public = TeacherCourseViewSet.as_view(
-    {'get':'get_all_course_public'}
-)
 get_all_course_enrolled = StudentCourseViewSet.as_view(
     {'get':'get_all_course_enrolled'}
+)
+get_all_course_public = StudentCourseViewSet.as_view(
+    {'get':'get_all_course_public'}
 )
 course_add = TeacherCourseViewSet.as_view(
     {'post':'course_add'}
@@ -137,7 +137,8 @@ urlpatterns = [
     path('user_learn_vocabulary_get/', user_learn_vocabulary_get, name='user_learn_vocabulary_get'),
     path('user_learn_vocabulary_post/', user_learn_vocabulary_post, name='user_learn_vocabulary_post'),
     path('vocabulary_get_all/', UserListVocabularyViewSet.as_view(), name="vocabulary_get_all"),
- 
+    path('user_skip_vocabulary/',user_skip_vocabulary),
+    
     path('admin_vocabulary_add/', admin_vocabulary_add, name='admin_vocabulary_add'),
     path('admin_vocabulary_update_by_id/', admin_vocabulary_update_by_id, name='admin_vocabulary_update_by_id'),
     path('admin_vocabulary_delete_by_id/', admin_vocabulary_delete_by_id, name='admin_vocabulary_delete_by_id'),
@@ -165,5 +166,7 @@ urlpatterns = [
     path('get_all_students_from_course/',get_all_students_from_course),
     path('detect_audio/',SpeechToTextAPIView.as_view(),name='detect_audio'),
     #VocabularyNeedReview
-    path('vocabularies_need_review/',StudentVocabularyNeedReviewView.as_view(),name='vocabularies_need_review')
+    path('vocabularies_need_review/',StudentVocabularyNeedReviewView.as_view(),name='vocabularies_need_review'),
+    #leader_board
+    path('leader_board/',LeaderBoardView.as_view(),name='leader_board')
 ]

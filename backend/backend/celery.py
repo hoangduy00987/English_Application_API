@@ -20,5 +20,11 @@ app.conf.beat_schedule = {
     'check-expo-tokens-weekly': {
         'task': 'api.login.tasks.periodic_token_check',
         'schedule': crontab(day_of_week=1, hour=0, minute=0),
-    }
+    },'reset-weekly-points': {
+        'task': 'api.vocabulary.tasks.reset_week_leaderboard_points',  
+        'schedule': crontab(minute=59, hour=23, day_of_week=6), 
+    },'reset-monthly-points': {
+        'task': 'api.vocabulary.tasks.reset_month_leaderboard_points',  
+        'schedule': crontab(minute=59, hour=23, day=28), 
+    },
 }
