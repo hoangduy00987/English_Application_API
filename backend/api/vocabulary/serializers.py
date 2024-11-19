@@ -173,7 +173,7 @@ class ListVocabularyProcessOfUserSerializers(serializers.ModelSerializer):
     word = serializers.SerializerMethodField()
     class Meta:
         model = UserVocabularyProcess
-        fields = ['id','learned_at','review_count','next_review_at','is_learned','word']
+        fields = ['id','last_learned_at','review_count','next_review_at','is_learned','word']
 
     def get_word(self, obj):
         vocabulary = Vocabulary.objects.get(word=obj)
