@@ -725,17 +725,17 @@ class TeacherEnrollStudentView(viewsets.ModelViewSet):
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods="POST", detail=False, url_path="enroll_student", url_name="enroll_student")
-    def enroll_student(self,request):
+    def enroll_student(self, request):
         try:
             serializer = StudentEnrollCourseSerializers(data=request.data)
             if serializer.is_valid():
-                serializer.enroll(request=request)
-                return Response({'message':'students added successfuly'},status=status.HTTP_200_OK)
+                results = serializer.enroll(request=request)
+                return Response(results, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as error:
-            print('error',error)
-            return Response({'message':'An error occurred on the server', 'detail':str(error)},status=status.HTTP_400_BAD_REQUEST)
-    
+            print('error', error)
+            return Response({'message': 'An error occurred on the server', 'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(methods="DELETE", detail=False, url_path="delete_student_from_course", url_name="delete_student_from_course")
     def delete_student_from_course(self,request):
         try:
@@ -803,6 +803,7 @@ class StudentVocabularyNeedReviewView(APIView):
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 class LeaderBoardView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
             course_id = request.query_params.get('course_id')
@@ -831,6 +832,7 @@ class LeaderBoardView(APIView):
                     avatar_url = request.build_absolute_uri(avatar_url)
                 
                 leaderboard_data.append({
+                    'id':entry.user.id,
                     'stt': rank,
                     'full_name': entry.user.user.full_name,
                     'avatar': avatar_url,  
@@ -840,5 +842,98 @@ class LeaderBoardView(APIView):
 
             return Response(leaderboard_data, status=status.HTTP_200_OK)
         
+        except Exception as error:
+            return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+class StudentPoint(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            student_id = request.query_params.get('student_id',None)
+            student_info = User.objects.get(Q(id=request.user.id) | Q(id=student_id))
+            student_point = LeaderBoard.objects.get(user=student_info.id)
+            total_vocabulary = UserVocabularyProcess.objects.filter(user_id=student_info.id)
+            response = {
+                'name':student_info.user.full_name,
+                'avatar':request.build_absolute_uri(student_info.user.avatar.url) if student_info.user.avatar else None,
+                'points':student_point.total_points,
+                'words':total_vocabulary.count()
+            }
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as error:
+            return Response({'message':str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+class StudentProgressView(viewsets.ReadOnlyModelViewSet):
+    permission_classes =  [IsAdminUser]
+    @action(methods=["GET"], detail=False, url_path="get_list_student", url_name="get_list_student")
+    def get_list_student(self, request):
+        try:
+            course_id = request.query_params.get("course_id")
+
+            if not course_id:
+                return Response({'message': 'Course ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            topics = Topic.objects.filter(course_id=course_id)
+
+            progress_data = UserTopicProgress.objects.filter(topic_id__in=topics)
+
+            student_progress = {}
+
+            for progress in progress_data:
+                student = progress.user_id
+                avatar_url = request.build_absolute_uri(student.user.avatar.url) if student.user.avatar else None
+                if student.id not in student_progress:
+                    student_progress[student.id] = {
+                        'id':student.id,
+                        'avatar': avatar_url,
+                        'student_name': student.user.full_name,
+                        'completed_topics': 0,
+                        'total_topics': topics.count()
+                    }
+                if progress.is_completed:
+                    student_progress[student.id]['completed_topics'] += 1
+            
+            progress_list = list(student_progress.values())
+
+            return Response(progress_list, status=status.HTTP_200_OK)
+
+        except Exception as error:
+            return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(methods=["GET"], detail=False, url_path="student_topics_progress_detail", url_name="student_topics_progress_detail")
+    def student_topics_progress_detail(self, request):
+        try:
+            student_id = request.query_params.get("student_id")
+
+            if not student_id:
+                return Response({'message': 'student  id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            student = User.objects.get(id=student_id)
+            progress_data = UserTopicProgress.objects.filter(user_id=student)
+
+            topics_progress = []
+
+            for progress in progress_data:
+                topic = progress.topic_id
+
+                topic_data = {
+                    'topic_name': topic.name,
+                    'is_completed': progress.is_completed,
+                }
+
+                if not progress.is_completed:
+                    vocabulary = UserVocabularyProcess.objects.filter(vocabulary_id__topic_id=topic)
+                    num_vocabulary = Vocabulary.objects.filter(topic_id=topic)
+                    vocab_count = vocabulary.count()
+                    total_vocab = num_vocabulary.count()
+                    topic_data['completed_vocab'] = vocab_count
+                    topic_data['total_vocab'] = total_vocab
+
+                topics_progress.append(topic_data)
+
+            return Response(topics_progress, status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response({'message': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
