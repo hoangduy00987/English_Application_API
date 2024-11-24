@@ -619,10 +619,14 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
     
     def enroll(self, request):
         try:
+            # Kiểm tra xem email có được cung cấp hay không
             emails = self.validated_data.get('emails', [])
+            if not emails:
+                return {"errors": ["No emails provided. Please include at least one email."]}
+
             course_id = self.validated_data.get('course_id')
             course = Course.objects.get(id=course_id)
-            
+
             results = {
                 "enrolled_students": [],
                 "errors": []
@@ -704,9 +708,8 @@ class StudentCourseSerializers(serializers.ModelSerializer):
         model = Course
         fields = ['id','name','image','description']
 
-# class LeaderBoardSerializer(serializers.ModelSerializer):
-#     full_name =  serializers.SerializerMethodField()
-#     avatar = serializers.SerializerMethodField()
-#     class Meta:
-#         model = LeaderBoard
-#         fields = ['full_name','avatar','score']
+class StudentProgressSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    class Meta:
+        model = UserTopicProgress
+        fields = []

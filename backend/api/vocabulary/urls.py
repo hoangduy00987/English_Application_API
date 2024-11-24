@@ -117,6 +117,15 @@ delete_student_from_course = TeacherEnrollStudentView.as_view(
 get_all_students_from_course = TeacherEnrollStudentView.as_view(
     {'get':'get_all_students_from_course'}
 )
+
+#StudentProgress
+get_list_student = StudentProgressView.as_view(
+    {'get':'get_list_student'}
+)
+student_topics_progress_detail = StudentProgressView.as_view(
+    {'get':'student_topics_progress_detail'}
+)
+
 urlpatterns = [
     #Adminfunction
     path('courses_get_all/', courses_get_all, name='courses_get_all'),
@@ -168,5 +177,8 @@ urlpatterns = [
     #VocabularyNeedReview
     path('vocabularies_need_review/',StudentVocabularyNeedReviewView.as_view(),name='vocabularies_need_review'),
     #leader_board
-    path('leader_board/',LeaderBoardView.as_view(),name='leader_board')
+    path('leader_board/',LeaderBoardView.as_view(),name='leader_board'),
+    path('get_list_student/',get_list_student),
+    path('student_topics_progress_detail/',student_topics_progress_detail),
+    path('student_point/',StudentPoint.as_view(),name='student_point')
 ]
