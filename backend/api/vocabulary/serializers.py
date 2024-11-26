@@ -77,7 +77,7 @@ class TeacherCourseSerializers(serializers.ModelSerializer):
         fields = ['id','name','image','description','list_topic']    
 
     def get_list_topic(self, obj):
-        topics = Topic.objects.filter(course_id=obj.id, is_deleted=False).order_by('id')
+        topics = Topic.objects.filter(course_id=obj.id, is_deleted=False).order_by('-updated_at')
         return AdminTopicSerializers(topics, many=True, context=self.context).data
 
 class VocabularySerializers(serializers.ModelSerializer):
@@ -100,7 +100,7 @@ class UserListVocabularyOfTopicSerializers(serializers.ModelSerializer):
 
     def get_vocabularies(self, obj):
         # Lấy tất cả từ vựng liên quan đến topic này và có is_deleted=False
-        active_vocabularies = Vocabulary.objects.filter(topic_id=obj, is_deleted=False)
+        active_vocabularies = Vocabulary.objects.filter(topic_id=obj, is_deleted=False).order_by('-updated_at')
         # Trả về dữ liệu đã được serialize
         return AdminVocabularySerializers(active_vocabularies, many=True).data
         
@@ -310,7 +310,7 @@ class AdminVocabularyOfTopicSerializers(serializers.ModelSerializer):
 
     def get_vocabularies(self, obj):
         # Lấy tất cả từ vựng liên quan đến topic này và có is_deleted=False
-        active_vocabularies = Vocabulary.objects.filter(topic_id=obj, is_deleted=False)
+        active_vocabularies = Vocabulary.objects.filter(topic_id=obj, is_deleted=False).order_by('-updated_at')
         # Trả về dữ liệu đã được serialize
         return AdminVocabularySerializers(active_vocabularies, many=True).data
 
