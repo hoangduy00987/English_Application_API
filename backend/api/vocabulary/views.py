@@ -271,11 +271,11 @@ class UserListVocabularyViewSet(APIView):
     def get(self, request):
         try:
             topic_id = request.query_params.get('topic_id')
-            topic = Topic.objects.get(id=topic_id, is_public=True, is_deleted=False)
+            topic = Vocabulary.objects.get(topic_id=topic_id, is_public=True, is_deleted=False)
             serializer = self.serializer_class(topic, context={'request':request})
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Topic.DoesNotExist:
-            return Response({"message": "Topic Not Found"}, status=status.HTTP_404_NOT_FOUND)
+        except Vocabulary.DoesNotExist:
+            return Response({"message": "Vocabulary Not Found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print('error: ', error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
@@ -349,11 +349,11 @@ class TeacherListVocabularyViewSet(viewsets.ModelViewSet):
     def admin_vocabulary_get_all(self, request):
         try:
             topic_id = request.query_params.get('topic_id')
-            topic = Topic.objects.get(id=topic_id,is_deleted=False)
+            topic = Vocabulary.objects.filter(topic_id=topic_id,is_deleted=False).order_by('-update_at')
             serializer = self.serializer_class(topic, context={'request':request})
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Topic.DoesNotExist:
-            return Response({"message": "Topic not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Vocabulary.DoesNotExist:
+            return Response({"message": "Vocabulary not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print('error: ', error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
@@ -582,7 +582,7 @@ class TeacherListTopicView(viewsets.ModelViewSet):
             if not course_id:
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            course = Course.objects.filter(id=course_id, is_deleted=False)
+            course = Course.objects.filter(id=course_id, is_deleted=False).order_by('-update_at')
             if not course:
                 return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)  
             page = self.paginate_queryset(course)
@@ -605,7 +605,7 @@ class TeacherCourseViewSet(viewsets.ModelViewSet):
     @action(methods="GET", detail=False, url_path="courses_get_all", url_name="courses_get_all")
     def courses_get_all(self, request):
         try:
-            queryset = Course.objects.filter(is_deleted=False)
+            queryset = Course.objects.filter(is_deleted=False).order_by('-update_at')
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True, context={'request': request})

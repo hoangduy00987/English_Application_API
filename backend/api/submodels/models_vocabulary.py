@@ -10,6 +10,7 @@ class Course(models.Model):
     image = models.ImageField(upload_to='course_imgae/',null=True)
     is_public = models.BooleanField(null=True)
     is_deleted = models.BooleanField(null=True)
+    update_at = models.DateTimeField(null=True)
     def __str__(self) -> str:
         return self.name
 
