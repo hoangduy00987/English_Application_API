@@ -349,7 +349,7 @@ class TeacherListVocabularyViewSet(viewsets.ModelViewSet):
     def admin_vocabulary_get_all(self, request):
         try:
             topic_id = request.query_params.get('topic_id')
-            topic = Vocabulary.objects.filter(topic_id=topic_id,is_deleted=False).order_by('-update_at')
+            topic = Vocabulary.objects.filter(topic_id=topic_id,is_deleted=False).order_by('-updated_at')
             serializer = self.serializer_class(topic, context={'request':request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Vocabulary.DoesNotExist:
@@ -582,7 +582,7 @@ class TeacherListTopicView(viewsets.ModelViewSet):
             if not course_id:
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            course = Course.objects.filter(id=course_id, is_deleted=False).order_by('-update_at')
+            course = Course.objects.filter(id=course_id, is_deleted=False).order_by('-updated_at')
             if not course:
                 return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)  
             page = self.paginate_queryset(course)
