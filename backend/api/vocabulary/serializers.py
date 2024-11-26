@@ -219,6 +219,7 @@ class TeacherManageCourseSerializers(serializers.ModelSerializer):
             model.image = validated_data.get('image', model.image)
             model.description = validated_data.get('description', model.description) 
             model.is_public = validated_data.get('is_public', model.is_public)
+            model.update_at = timezone.now()
             model.save()
             return model
         except serializers.ValidationError as ve:
