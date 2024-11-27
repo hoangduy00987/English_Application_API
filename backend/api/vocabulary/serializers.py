@@ -248,7 +248,7 @@ class TeacherManageCourseSerializers(serializers.ModelSerializer):
 class AdminTopicSerializers(serializers.ModelSerializer):
     name = serializers.CharField(required=False)
     image = serializers.ImageField(required=False)
-    course_id = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all())
+    course_id = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(),required=False)
     num_words = serializers.SerializerMethodField()
     class Meta:
         model = Topic
