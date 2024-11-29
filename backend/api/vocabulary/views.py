@@ -937,3 +937,21 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             return Response({'message': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        
+class GetRandomTenWordsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            vocabularies = list(Vocabulary.objects.all())
+            ten_vocab = random.sample(vocabularies,10)
+            result = []
+            for vocab in ten_vocab:
+                result.append({
+                    'word':vocab.word,
+                    'meaning':vocab.meaning
+                })
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            print('error: ', e)
+            return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)

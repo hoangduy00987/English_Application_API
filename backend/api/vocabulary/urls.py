@@ -147,7 +147,8 @@ urlpatterns = [
     path('user_learn_vocabulary_post/', user_learn_vocabulary_post, name='user_learn_vocabulary_post'),
     path('vocabulary_get_all/', UserListVocabularyViewSet.as_view(), name="vocabulary_get_all"),
     path('user_skip_vocabulary/',user_skip_vocabulary),
-    
+    path('random_vocab/',GetRandomTenWordsView.as_view(), name='random_vocab'),
+
     path('admin_vocabulary_add/', admin_vocabulary_add, name='admin_vocabulary_add'),
     path('admin_vocabulary_update_by_id/', admin_vocabulary_update_by_id, name='admin_vocabulary_update_by_id'),
     path('admin_vocabulary_delete_by_id/', admin_vocabulary_delete_by_id, name='admin_vocabulary_delete_by_id'),
