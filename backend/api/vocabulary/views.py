@@ -56,6 +56,9 @@ def update_leader_board(user, points, course_id):
         leaderboard.weekly_points += points
         leaderboard.monthly_points += points
         leaderboard.total_points += points
+        now = timezone.now()
+        leaderboard.year_week = now.isocalendar()[1]
+        leaderboard.year_month = now.month
         leaderboard.update_at = timezone.now()
 
         
@@ -837,12 +840,15 @@ class LeaderBoardView(APIView):
                     'full_name': entry.user.user.full_name,
                     'avatar': avatar_url,  
                     'points': points,
+                    'is_current_user': entry.user.id == request.user.id
                 })
+
                 rank += 1
 
             return Response(leaderboard_data, status=status.HTTP_200_OK)
         
         except Exception as error:
+            print('error: ',error)
             return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 class StudentPoint(APIView):
