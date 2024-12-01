@@ -274,7 +274,7 @@ class UserListVocabularyViewSet(APIView):
     def get(self, request):
         try:
             topic_id = request.query_params.get('topic_id')
-            topic = Topic.objects.get(id=topic_id, is_public=True, is_deleted=False)
+            topic = Topic.objects.get(id=topic_id, is_public=True, is_deleted=False,)
             serializer = self.serializer_class(topic, context={'request':request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Topic.DoesNotExist:
@@ -855,8 +855,8 @@ class StudentPoint(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
-            student_id = request.query_params.get('student_id',None)
-            student_info = User.objects.get(Q(id=request.user.id) | Q(id=student_id))
+            student_id = request.query_params.get('student_id')
+            student_info = User.objects.get(id=student_id)
             student_point = LeaderBoard.objects.get(user=student_info.id)
             total_vocabulary = UserVocabularyProcess.objects.filter(user_id=student_info.id)
             response = {
