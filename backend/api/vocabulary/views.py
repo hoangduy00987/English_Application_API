@@ -857,7 +857,7 @@ class StudentPoint(APIView):
         try:
             student_id = request.query_params.get('student_id')
             student_info = User.objects.get(id=student_id)
-            student_point = LeaderBoard.objects.get(user=student_info.id)
+            student_point = LeaderBoard.objects.filter(user=student_info.id).first()
             total_vocabulary = UserVocabularyProcess.objects.filter(user_id=student_info.id)
             response = {
                 'name':student_info.user.full_name,
