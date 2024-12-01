@@ -19,6 +19,7 @@ import torch
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
 import librosa
 from .serializers import AudioFileSerializer
+from django.db.models import Sum
 
 
 
@@ -852,17 +853,19 @@ class LeaderBoardView(APIView):
             return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 class StudentPoint(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
             student_id = request.query_params.get('student_id')
+            if not student_id:
+                return Response({'message':'student_id is required'}, status=status.HTTP_400_BAD_REQUEST)
             student_info = User.objects.get(id=student_id)
-            student_point = LeaderBoard.objects.filter(user=student_info.id).first()
+            total_points = LeaderBoard.objects.filter(user=student_info.id).aggregate(Sum('total_points'))['total_points__sum'] or 0
             total_vocabulary = UserVocabularyProcess.objects.filter(user_id=student_info.id)
             response = {
                 'name':student_info.user.full_name,
                 'avatar':request.build_absolute_uri(student_info.user.avatar.url) if student_info.user.avatar else None,
-                'points':student_point.total_points,
+                'points':total_points,
                 'words':total_vocabulary.count()
             }
             return Response(response, status=status.HTTP_200_OK)
