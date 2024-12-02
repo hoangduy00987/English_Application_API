@@ -702,7 +702,20 @@ class StudentCourseViewSet(viewsets.ModelViewSet):
         except Exception as error:
             print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
+class StudentEnrollCourseView(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    @action(methods="POST", detail=False, url_path="student_enroll_course", url_name="student_enroll_course")
+    def student_enroll_course(self, request):
+        try:
+            user_id = request.user
+            course_id = request.data.get('course_id')
+            course = Course.objects.get(id=course_id)
+            UserCourseEnrollment.objects.create(user_id=user_id,course_id=course, enrolled_at=timezone.now())
+            return Response({'message':'student enrolled course successfuly'}, status=status.HTTP_200_OK)
+        except Exception as error:
+            print('error', error)
+            return Response({'message': 'An error occurred on the server', 'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
     
 class TeacherEnrollStudentView(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
@@ -739,7 +752,8 @@ class TeacherEnrollStudentView(viewsets.ModelViewSet):
         except Exception as error:
             print('error', error)
             return Response({'message': 'An error occurred on the server', 'detail': str(error)}, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    
     @action(methods="DELETE", detail=False, url_path="delete_student_from_course", url_name="delete_student_from_course")
     def delete_student_from_course(self,request):
         try:
@@ -783,25 +797,38 @@ class SpeechToTextAPIView(APIView):
     
 
     
-class StudentVocabularyNeedReviewView(APIView):
+class StudentVocabularyNeedReviewView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    def get(self, request):
+    @action(methods=["GET"], detail=False, url_path="get_vocabulary_need_review", url_name="get_vocabulary_need_review")
+    def get_vocabulary_need_review(self, request):
         try:
-            vocabularies = UserVocabularyProcess.objects.filter(user_id=request.user, is_need_review=True,is_skipped=False)
-            
-            vocabularies_list = []
-            for process in vocabularies:
-                vocabulary = process.vocabulary_id
-                serializer = LearnVocabularySerializers(vocabulary)
-                
-                vocabularies_list.append(serializer.data)
-            random_vocabulary_list = random.sample(vocabularies_list, 5) if len(vocabularies_list) >= 5 else vocabularies_list
-            vocabularies_data = {
-                'total_word': len(vocabularies_list),
-                'vocabularies': random_vocabulary_list
-            }
 
-            return Response(vocabularies_data, status=status.HTTP_200_OK)
+            course_need_review = UserCourseEnrollment.objects.filter(user_id=request.user)
+            response_data = []
+            for enrollment in course_need_review:
+                course = enrollment.course_id
+                vocabularies = UserVocabularyProcess.objects.filter(
+                    user_id=request.user,
+                    vocabulary_id__topic_id__course_id=course, 
+                    is_need_review=True,
+                    is_skipped=False)
+                
+                
+                vocabularies_list = [
+                    LearnVocabularySerializers(process.vocabulary_id).data
+                    for process in vocabularies
+                ]
+                random_vocabulary_list = (
+                    random.sample(vocabularies_list, 5) if len(vocabularies_list) >= 5 else vocabularies_list
+                )
+                response_data.append({
+                    'course_image': request.build_absolute_uri(course.image.url),
+                    'name_course': course.name,
+                    'total_word': len(vocabularies_list),
+                    'vocabularies': random_vocabulary_list,
+                })
+
+            return Response(response_data, status=status.HTTP_200_OK)
         
         except Exception as e:
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
