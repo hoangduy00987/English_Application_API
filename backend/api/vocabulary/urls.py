@@ -71,6 +71,9 @@ set_next_review = UserVocabularyProcessViewSet.as_view(
 user_vocab_process = UserVocabularyProcessViewSet.as_view(
     {'get':'user_vocab_process'}
 )
+get_all_learned_vocabulary = ListLearnedVocabularyOfUserMVS.as_view(
+    {'get': 'get_all_learned_vocabulary'}
+)
 #MiniExercise
 admin_get_all_fill_in_exercises = TeacherMiniExerciseViewSet.as_view(
     {'get':'admin_get_all_fill_in_exercises'}
@@ -163,6 +166,7 @@ urlpatterns = [
 
     path('set_next_review/', set_next_review, name='set_next_review'),
     path('user_vocab_process/', user_vocab_process, name='user_vocab_process'),
+    path('get_all_learned_vocabulary/', get_all_learned_vocabulary, name='get_all_learned_vocabulary'),
     #Admin Vocabulary
     path('admin_vocabulary_get_all/', admin_vocabulary_get_all, name='admin_vocabulary_get_all'),
     path('admin_vocabulary_get_by_id/', admin_vocabulary_get_by_id, name='admin_vocabulary_get_by_id'),

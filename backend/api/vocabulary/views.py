@@ -26,7 +26,7 @@ from django.db.models import Sum
 class HistoryLogPagination(PageNumberPagination):
     page_size = 3
     page_size_query_param = 'page_size'
-    max_page_size = 10
+    max_page_size = 30
 
     def get_paginated_response(self, data):
         next_page = previous_page = None
@@ -82,7 +82,7 @@ class StudentTopicViewSet(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            course = Course.objects.filter(id=course_id, is_deleted=False)
+            course = Course.objects.filter(id=course_id, is_deleted=False).order_by('id')
             if not course:
                 return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)  
             page = self.paginate_queryset(course)
@@ -100,7 +100,7 @@ class StudentTopicViewSet(viewsets.ReadOnlyModelViewSet):
 
     
 
-#Get vocabuylray to learn
+#Get vocabulary to learn
 class UserVocabularyViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = LearnVocabularySerializers
@@ -265,6 +265,27 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
         except Exception as error:
             return Response({'message': 'An error occurred.', 'details': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+# List learned vocabularies of user
+class ListLearnedVocabularyOfUserMVS(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ListLearnedVocabularyOfUserSerializers
+    permission_classes = [IsAuthenticated]
+    pagination_class = HistoryLogPagination
+
+    @action(methods=['GET'], detail=False, url_path='get_all_learned_vocabulary', url_name='get_all_learned_vocabulary')
+    def get_all_learned_vocabulary(self, request):
+        try:
+            queryset = UserVocabularyProcess.objects.filter(user_id=request.user).order_by('-id')
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.serializer_class(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data)
+        except Exception as error:
+            print("get_all_learned_vocabulary_error:", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 #get all vocabulary of topic
@@ -586,7 +607,7 @@ class TeacherListTopicView(viewsets.ModelViewSet):
             if not course_id:
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            course = Course.objects.filter(id=course_id, is_deleted=False)
+            course = Course.objects.filter(id=course_id, is_deleted=False).order_by('id')
             if not course:
                 return Response({"message": "Course Not Found"}, status=status.HTTP_404_NOT_FOUND)  
             page = self.paginate_queryset(course)
@@ -673,7 +694,7 @@ class StudentCourseViewSet(viewsets.ModelViewSet):
             queryset = Course.objects.filter(
                 Q(id__in=UserCourseEnrollment.objects.filter(user_id=request.user).values('course_id')),
                 is_deleted=False
-            )
+            ).order_by('-id')
             
             page = self.paginate_queryset(queryset)
             if page is not None:
@@ -690,7 +711,10 @@ class StudentCourseViewSet(viewsets.ModelViewSet):
     @action(methods=["GET"], detail=False, url_path="get_all_course_public", url_name="get_all_course_public")
     def get_all_course_public(self, request):
         try:
-            queryset = Course.objects.filter(is_deleted=False,is_public=True)
+            queryset = Course.objects.filter(is_deleted=False,is_public=True).order_by('-id')
+            name = request.query_params.get('name')
+            if name:
+                queryset = queryset.filter(name__icontains=name)
             page = self.paginate_queryset(queryset)
             if page is not None:
                 # Truyền context với request vào serializer
