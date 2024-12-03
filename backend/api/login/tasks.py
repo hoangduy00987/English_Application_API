@@ -9,7 +9,7 @@ import asyncio
 
 @shared_task
 def send_reminder_email():
-    three_days_ago = timezone.now() - timedelta(minutes=5)
+    three_days_ago = timezone.localtime(timezone.now()) - timedelta(hours=1)
     inactive_users = Profile.objects.filter(last_activity__lt=three_days_ago)
 
     for user in inactive_users:

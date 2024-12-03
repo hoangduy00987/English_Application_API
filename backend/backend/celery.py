@@ -15,7 +15,7 @@ app.conf.beat_schedule = {
     },
     'send-reminder-email-every-day': {
         'task': 'api.login.tasks.send_reminder_email',
-        'schedule': timedelta(seconds=5),  # Chạy mỗi 5 phút
+        'schedule': timedelta(hours=1),  # Chạy mỗi giờ
     },
     'check-expo-tokens-weekly': {
         'task': 'api.login.tasks.periodic_token_check',
