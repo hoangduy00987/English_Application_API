@@ -6,7 +6,7 @@ from datetime import datetime
 class Profile(models.Model):
     user = models.OneToOneField(User, related_name='user', on_delete=models.CASCADE)
     is_first_login = models.BooleanField(default=True)
-    last_activity = models.DateTimeField(auto_now=True)
+    last_activity = models.DateTimeField(null=True, blank=True)
     full_name = models.CharField(max_length=255)
     gender = models.BooleanField(default=False)
     english_level = models.CharField(max_length=100,null=True,blank=True)
