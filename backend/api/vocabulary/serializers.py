@@ -176,8 +176,44 @@ class ListVocabularyProcessOfUserSerializers(serializers.ModelSerializer):
         fields = ['id','last_learned_at','review_count','next_review_at','is_learned','word']
 
     def get_word(self, obj):
-        vocabulary = Vocabulary.objects.get(word=obj)
+        vocabulary = Vocabulary.objects.filter(
+            word=obj.vocabulary_id.word
+        ).first()
         return vocabulary.word
+
+class ListLearnedVocabularyOfUserSerializers(serializers.ModelSerializer):
+    word = serializers.SerializerMethodField()
+    meaning = serializers.SerializerMethodField()
+    transcription = serializers.SerializerMethodField()
+    example = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserVocabularyProcess
+        fields = ['id', 'word', 'meaning', 'transcription', 'example']
+    
+    def get_word(self, obj):
+        vocabulary = Vocabulary.objects.filter(
+            word=obj.vocabulary_id.word
+        ).first()
+        return vocabulary.word
+    
+    def get_meaning(self, obj):
+        vocabulary = Vocabulary.objects.filter(
+            word=obj.vocabulary_id.word
+        ).first()
+        return vocabulary.meaning
+    
+    def get_transcription(self, obj):
+        vocabulary = Vocabulary.objects.filter(
+            word=obj.vocabulary_id.word
+        ).first()
+        return vocabulary.transcription
+    
+    def get_example(self, obj):
+        vocabulary = Vocabulary.objects.filter(
+            word=obj.vocabulary_id.word
+        ).first()
+        return vocabulary.example
 
 class VocabularySerializer(serializers.ModelSerializer):
     class Meta:
