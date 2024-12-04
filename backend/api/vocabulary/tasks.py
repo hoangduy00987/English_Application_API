@@ -9,7 +9,7 @@ def update_review_status():
    
     now = timezone.now()
     processes = UserVocabularyProcess.objects.filter(
-        is_learned=True, last_learned_at__lt=now - timedelta(seconds=30)
+        is_learned=True, last_learned_at__lt=now - timedelta(hours=1)
     )
     
     for process in processes:
