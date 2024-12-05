@@ -134,9 +134,13 @@ student_topics_progress_detail = StudentProgressView.as_view(
     {'get':'get_vocabulary_need_review'}
 )
 # vocabulary need review
-get_vocabulary_need_review = StudentVocabularyNeedReviewView.as_view(
-    {'get':'get_vocabulary_need_review'}
+get_courses_need_review = StudentVocabularyNeedReviewView.as_view(
+    {'get':'get_courses_need_review'}
 )
+get_vocabularies_need_review = StudentVocabularyNeedReviewView.as_view(
+    {'get':'get_vocabularies_need_review'}
+)
+
 urlpatterns = [
     #Adminfunction
     path('courses_get_all/', courses_get_all, name='courses_get_all'),
@@ -189,7 +193,8 @@ urlpatterns = [
     path('detect_audio/',SpeechToTextAPIView.as_view(),name='detect_audio'),
     path('student_enroll_course/',student_enroll_course),
     #VocabularyNeedReview
-    path('get_vocabulary_need_review/',get_vocabulary_need_review),
+    path('get_courses_need_review/',get_courses_need_review),
+    path('get_vocabularies_need_review/',get_vocabularies_need_review),
     #leader_board
     path('leader_board/',LeaderBoardView.as_view(),name='leader_board'),
     path('get_list_student/',get_list_student),
