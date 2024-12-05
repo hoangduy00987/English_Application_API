@@ -114,6 +114,12 @@ class LearnVocabularySerializers(serializers.ModelSerializer):
     def get_mini_exercises(self, obj):
         mini_exercises = MiniExercise.objects.filter(vocabulary_id=obj, is_deleted=False).order_by('id')
         return MiniExerciseSerializers(mini_exercises, many=True).data
+    
+
+class ReviewVocabularySerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Vocabulary
+        fields = ['id','word','transcription','meaning','example','word_image','pronunciation_audio','pronunciation_video']
 
     
         

@@ -823,8 +823,8 @@ class SpeechToTextAPIView(APIView):
     
 class StudentVocabularyNeedReviewView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    @action(methods=["GET"], detail=False, url_path="get_vocabulary_need_review", url_name="get_vocabulary_need_review")
-    def get_vocabulary_need_review(self, request):
+    @action(methods=["GET"], detail=False, url_path="get_courses_need_review", url_name="get_courses_need_review")
+    def get_courses_need_review(self, request):
         try:
 
             course_need_review = UserCourseEnrollment.objects.filter(user_id=request.user)
@@ -836,19 +836,42 @@ class StudentVocabularyNeedReviewView(viewsets.ModelViewSet):
                     vocabulary_id__topic_id__course_id=course, 
                     is_need_review=True,
                     is_skipped=False)
-                
-                
-                vocabularies_list = [
-                    LearnVocabularySerializers(process.vocabulary_id).data
-                    for process in vocabularies
-                ]
-                random_vocabulary_list = (
-                    random.sample(vocabularies_list, 5) if len(vocabularies_list) >= 5 else vocabularies_list
-                )
                 response_data.append({
+                    'course_id':course.id,
                     'course_image': request.build_absolute_uri(course.image.url),
                     'name_course': course.name,
-                    'total_word': len(vocabularies_list),
+                    'total_word': len(vocabularies)
+                })
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(methods=["GET"], detail=False, url_path="get_vocabularies_need_review", url_name="get_vocabularies_need_review")
+    def get_vocabularies_need_review(self, request):
+        try:
+
+            course_id = request.query_params.get('course_id')
+            if not course_id:
+                return Response({'message':'course_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            course = Course.objects.get(id=course_id)
+            response_data = []
+            vocabularies = UserVocabularyProcess.objects.filter(
+                    user_id=request.user,
+                    vocabulary_id__topic_id__course_id=course, 
+                    is_need_review=True,
+                    is_skipped=False)
+                
+                
+            vocabularies_list = [
+                    ReviewVocabularySerializers(process.vocabulary_id,context={"request": request}).data
+                    for process in vocabularies
+            ]
+            random_vocabulary_list = (
+                random.sample(vocabularies_list, 5) if len(vocabularies_list) >= 5 else vocabularies_list
+            )
+            response_data.append({
                     'vocabularies': random_vocabulary_list,
                 })
 
@@ -856,7 +879,8 @@ class StudentVocabularyNeedReviewView(viewsets.ModelViewSet):
         
         except Exception as e:
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+            
 class LeaderBoardView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
