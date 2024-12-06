@@ -20,7 +20,7 @@ from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
 import librosa
 from .serializers import AudioFileSerializer
 from django.db.models import Sum
-
+import speech_recognition as sr
 
 
 class HistoryLogPagination(PageNumberPagination):
@@ -790,35 +790,26 @@ class TeacherEnrollStudentView(viewsets.ModelViewSet):
 
 class SpeechToTextAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        model_directory = "/root/English_Application_API/backend/api/vocabulary/Model3" 
-        self.tokenizer = Wav2Vec2Tokenizer.from_pretrained(model_directory)
-        self.model = Wav2Vec2ForCTC.from_pretrained(model_directory)
-        if torch.cuda.is_available():
-            self.model = self.model.to("cuda")  # Đưa mô hình vào GPU
-
-    def post(self, request):
-        try:
-            serializer = AudioFileSerializer(data=request.data)
-            if serializer.is_valid():
-                audio_file = serializer.validated_data['file']
-                input_audio, _ = librosa.load(audio_file, sr=16000)
-
-                input_values = self.tokenizer(input_audio, return_tensors="pt").input_values
-                if torch.cuda.is_available():
-                    input_values = input_values.to("cuda")  # Đưa dữ liệu vào GPU
-
-                with torch.no_grad():
-                    logits = self.model(input_values).logits
-                    predicted_ids = torch.argmax(logits, dim=-1)
-                    transcription = self.tokenizer.batch_decode(predicted_ids)[0]
-
-                return Response({"transcription": transcription}, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+    def post(self, request, *args, **kwargs):
+        serializer = AudioFileSerializer(data=request.data)
+        if serializer.is_valid():
+            audio_file = serializer.validated_data['audio_file']
+            
+            # Sử dụng SpeechRecognition để xử lý
+            recognizer = sr.Recognizer()
+            try:
+                # Đọc file âm thanh
+                with sr.AudioFile(audio_file) as source:
+                    audio_data = recognizer.record(source)
+                
+                # Chuyển đổi âm thanh sang văn bản
+                text = recognizer.recognize_google(audio_data)
+                
+                # Trả về kết quả
+                return Response({"text": text}, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     
 class StudentVocabularyNeedReviewView(viewsets.ModelViewSet):

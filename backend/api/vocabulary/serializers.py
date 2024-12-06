@@ -716,12 +716,13 @@ class StudentEnrollCourseSerializers(serializers.ModelSerializer):
             return None
 
 class AudioFileSerializer(serializers.Serializer):
-    file = serializers.FileField()
+    audio_file = serializers.FileField()
 
-# class AdminCourseSerializers(serializers.ModelSerializer):
-#     class Meta:
-#         model = Course
-#         fields = ['id','name','image','description','is_public']
+    def validate_audio_file(self, value):
+        allowed_extensions = ['.wav', '.mp3', '.m4a']
+        if not any(value.name.endswith(ext) for ext in allowed_extensions):
+            raise serializers.ValidationError("Only .wav, .mp3, and .m4a files are supported.")
+        return value
 
 class StudentSerializer(serializers.ModelSerializer):
     enrolled_at = serializers.SerializerMethodField()
