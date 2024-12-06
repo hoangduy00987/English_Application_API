@@ -63,3 +63,4 @@ torch
 transformers
 soundfile 
 librosa
+SpeechRecognition

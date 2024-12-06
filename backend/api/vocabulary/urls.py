@@ -200,4 +200,5 @@ urlpatterns = [
     path('get_list_student/',get_list_student),
     path('student_topics_progress_detail/',student_topics_progress_detail),
     path('student_point/',StudentPoint.as_view(),name='student_point')
+    
 ]
