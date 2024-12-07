@@ -919,7 +919,7 @@ class LeaderBoardView(APIView):
             return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 class StudentPoint(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
             student_id = request.query_params.get('student_id')
@@ -993,6 +993,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
 
                 topic_data = {
                     'topic_name': topic.name,
+                    'image': request.build_absolute_uri(topic.image.url) if topic.image else None,
                     'is_completed': progress.is_completed,
                 }
 
