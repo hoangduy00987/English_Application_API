@@ -131,7 +131,7 @@ get_list_student = StudentProgressView.as_view(
     {'get':'get_list_student'}
 )
 student_topics_progress_detail = StudentProgressView.as_view(
-    {'get':'get_vocabulary_need_review'}
+    {'get':'student_topics_progress_detail'}
 )
 # vocabulary need review
 get_courses_need_review = StudentVocabularyNeedReviewView.as_view(
