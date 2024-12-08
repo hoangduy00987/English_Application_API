@@ -732,7 +732,7 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ["email",'full_name','enrolled_at']
     def get_enrolled_at(self, user):
         try:
-            enrollment = UserCourseEnrollment.objects.get(user_id=user)
+            enrollment = UserCourseEnrollment.objects.filter(user_id=user).first()
             return enrollment.enrolled_at 
 
         except UserCourseEnrollment.DoesNotExist:
