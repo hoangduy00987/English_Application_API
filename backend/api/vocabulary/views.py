@@ -749,21 +749,31 @@ class TeacherEnrollStudentView(viewsets.ModelViewSet):
     @action(methods="GET", detail=False, url_path="get_all_students_from_course", url_name="get_all_students_from_course")
     def get_all_students_from_course(self, request):
         try:
+            # Lấy course_id từ query parameters
             course_id = request.query_params.get('course_id')
             if not course_id:
                 return Response({"message": "Course ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Lấy danh sách enrollments dựa trên course_id
             enrollments = UserCourseEnrollment.objects.filter(course_id=course_id)
             if not enrollments.exists():
                 return Response({"message": "No students enrolled in this course."}, status=status.HTTP_404_NOT_FOUND)
 
-            students = [enrollment.user_id for enrollment in enrollments]
-            serializer = StudentSerializer(students, many=True)
+            # Loại bỏ trùng lặp user_id bằng set
+            student_ids = set(enrollments.values_list('user_id', flat=True))
+
+            # Lấy thông tin chi tiết sinh viên
+            students = User.objects.filter(id__in=student_ids)
+            if not students.exists():
+                return Response({"message": "No students found."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Serialize danh sách sinh viên
+            serializer = StudentSerializer(students, many=True, context={"course_id": course_id})
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         except Exception as error:
             print("Error:", error)
-            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(methods="POST", detail=False, url_path="enroll_student", url_name="enroll_student")
     def enroll_student(self, request):
