@@ -825,8 +825,10 @@ class StudentVocabularyNeedReviewView(viewsets.ModelViewSet):
     @action(methods=["GET"], detail=False, url_path="get_courses_need_review", url_name="get_courses_need_review")
     def get_courses_need_review(self, request):
         try:
-
+            name = request.query_params.get('name')
             course_need_review = UserCourseEnrollment.objects.filter(user_id=request.user)
+            if name:
+                course_need_review = course_need_review.filter(course_id__name__icontains=name)
             response_data = []
             for enrollment in course_need_review:
                 course = enrollment.course_id
@@ -1039,3 +1041,21 @@ class GetRandomTenWordsView(APIView):
         except Exception as e:
             print('error: ', e)
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class GetRandomWordsInReviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            word = request.query_params.get('word')
+            vocabularies = list(Vocabulary.objects.exclude(word=word))
+            three_vocab = random.sample(vocabularies, 3)
+            result = []
+            for vocab in three_vocab:
+                result.append({'word': vocab.word})
+            result.append({'word': word})
+            result = random.sample(result, 4)
+            return Response(result)
+        except Exception as error:
+            print("get_random_word_in_review_error:", error)
+            return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)

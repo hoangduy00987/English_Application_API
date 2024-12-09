@@ -164,6 +164,7 @@ urlpatterns = [
     path('vocabulary_get_all/', UserListVocabularyViewSet.as_view(), name="vocabulary_get_all"),
     path('user_skip_vocabulary/',user_skip_vocabulary),
     path('random_vocab/',GetRandomTenWordsView.as_view(), name='random_vocab'),
+    path('random_word_review/', GetRandomWordsInReviewView.as_view(), name='random_word_review'),
 
     path('admin_vocabulary_add/', admin_vocabulary_add, name='admin_vocabulary_add'),
     path('admin_vocabulary_update_by_id/', admin_vocabulary_update_by_id, name='admin_vocabulary_update_by_id'),
