@@ -750,7 +750,7 @@ class StudentSerializer(serializers.ModelSerializer):
 class StudentCourseSerializers(serializers.ModelSerializer):
     class Meta:
         model = Course
-        fields = ['id','name','image','description']
+        fields = ['id','name','image','description','is_public']
 
 class StudentProgressSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
