@@ -692,7 +692,7 @@ class StudentCourseViewSet(viewsets.ModelViewSet):
     def get_all_course_enrolled(self, request):
         try:
             queryset = Course.objects.filter(
-                Q(id__in=UserCourseEnrollment.objects.filter(user_id=request.user).values('course_id')) | Q(is_public=True),
+                Q(id__in=UserCourseEnrollment.objects.filter(user_id=request.user).values('course_id')),
                 is_deleted=False
             ).order_by('-id')
             
