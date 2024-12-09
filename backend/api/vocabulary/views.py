@@ -708,24 +708,24 @@ class StudentCourseViewSet(viewsets.ModelViewSet):
             print("error:", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
     
-    # @action(methods=["GET"], detail=False, url_path="get_all_course_public", url_name="get_all_course_public")
-    # def get_all_course_public(self, request):
-    #     try:
-    #         queryset = Course.objects.filter(is_deleted=False,is_public=True).order_by('-id')
-    #         name = request.query_params.get('name')
-    #         if name:
-    #             queryset = queryset.filter(name__icontains=name)
-    #         page = self.paginate_queryset(queryset)
-    #         if page is not None:
-    #             # Truyền context với request vào serializer
-    #             serializer = self.get_serializer(page, many=True, context={'request': request})
-    #             return self.get_paginated_response(serializer.data)
-    #         # Truyền context với request vào serializer
-    #         serializer = self.serializer_class(queryset, many=True, context={'request': request})
-    #         return Response(serializer.data, status=status.HTTP_200_OK)
-    #     except Exception as error:
-    #         print("error", error)
-    #         return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+    @action(methods=["GET"], detail=False, url_path="get_all_course_public", url_name="get_all_course_public")
+    def get_all_course_public(self, request):
+        try:
+            queryset = Course.objects.filter(is_deleted=False,is_public=True).order_by('-id')
+            name = request.query_params.get('name')
+            if name:
+                queryset = queryset.filter(name__icontains=name)
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                # Truyền context với request vào serializer
+                serializer = self.get_serializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+            # Truyền context với request vào serializer
+            serializer = self.serializer_class(queryset, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as error:
+            print("error", error)
+            return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 class StudentEnrollCourseView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]

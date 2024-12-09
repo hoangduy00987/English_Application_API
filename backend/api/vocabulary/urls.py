@@ -7,9 +7,9 @@ from .views import *
 get_all_course_enrolled = StudentCourseViewSet.as_view(
     {'get':'get_all_course_enrolled'}
 )
-# get_all_course_public = StudentCourseViewSet.as_view(
-#     {'get':'get_all_course_public'}
-# )
+get_all_course_public = StudentCourseViewSet.as_view(
+    {'get':'get_all_course_public'}
+)
 course_add = TeacherCourseViewSet.as_view(
     {'post':'course_add'}
 )
@@ -145,7 +145,7 @@ urlpatterns = [
     #Adminfunction
     path('courses_get_all/', courses_get_all, name='courses_get_all'),
     #Course
-    # path('get_all_course_public/', get_all_course_public, name='get_all_course_public'),
+    path('get_all_course_public/', get_all_course_public, name='get_all_course_public'),
     
     path('course_update_by_id/', course_update_by_id, name='course_update_by_id'),
     path('get_all_course_enrolled/', get_all_course_enrolled, name='get_all_course_enrolled'),
