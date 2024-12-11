@@ -696,6 +696,9 @@ class StudentCourseViewSet(viewsets.ModelViewSet):
                 is_deleted=False
             ).order_by('-id')
             
+            name = request.query_params.get('name')
+            if name:
+                queryset = queryset.filter(name__icontains=name)
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True, context={'request': request})
@@ -711,7 +714,11 @@ class StudentCourseViewSet(viewsets.ModelViewSet):
     @action(methods=["GET"], detail=False, url_path="get_all_course_public", url_name="get_all_course_public")
     def get_all_course_public(self, request):
         try:
-            queryset = Course.objects.filter(is_deleted=False,is_public=True).order_by('-id')
+            queryset = Course.objects.filter(
+                ~Q(id__in=UserCourseEnrollment.objects.filter(user_id=request.user).values('course_id')) &
+                Q(is_deleted=False) &
+                Q(is_public=True)
+            ).order_by('-id')
             name = request.query_params.get('name')
             if name:
                 queryset = queryset.filter(name__icontains=name)
