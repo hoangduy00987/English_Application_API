@@ -1002,15 +1002,21 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({'message':'course id is required'})
             student = User.objects.get(id=student_id)
+
             course  = Course.objects.get(id=course_id)
             progress_data = UserTopicProgress.objects.filter(user_id=student,topic_id__course_id = course)
 
-            topics_progress = []
-
+            response_data = {
+                            "student_name":student.user.full_name,
+                            "avatar":request.build_absolute_uri(student.user.avatar),
+                            "list_topic":[]
+                            }
+          
             for progress in progress_data:
                 topic = progress.topic_id
 
                 topic_data = {
+                    'student_name':student.user.full_name,
                     'topic_name': topic.name,
                     'image': request.build_absolute_uri(topic.image.url) if topic.image else None,
                     'is_completed': progress.is_completed,
@@ -1023,10 +1029,9 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
                     total_vocab = num_vocabulary.count()
                     topic_data['completed_vocab'] = vocab_count
                     topic_data['total_vocab'] = total_vocab
+                    response_data['list_topic'].append(topic_data)
 
-                topics_progress.append(topic_data)
-
-            return Response(topics_progress, status=status.HTTP_200_OK)
+            return Response(response_data, status=status.HTTP_200_OK)
 
         except User.DoesNotExist:
             return Response({'message': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
