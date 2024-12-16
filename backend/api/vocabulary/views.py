@@ -996,12 +996,14 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
     def student_topics_progress_detail(self, request):
         try:
             student_id = request.query_params.get("student_id")
-
+            course_id = request.query_params.get("course_id")
             if not student_id:
                 return Response({'message': 'student  id is required'}, status=status.HTTP_400_BAD_REQUEST)
-
+            if not course_id:
+                return Response({'message':'course id is required'})
             student = User.objects.get(id=student_id)
-            progress_data = UserTopicProgress.objects.filter(user_id=student)
+            course  = Course.objects.get(id=course_id)
+            progress_data = UserTopicProgress.objects.filter(user_id=student,topic_id__course_id = course)
 
             topics_progress = []
 
