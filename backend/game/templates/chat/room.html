@@ -1,0 +1,76 @@
+<!-- chat/templates/chat/room.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Chat Room</title>
+  </head>
+  <body>
+    <textarea id="chat-log" cols="100" rows="20"></textarea><br />
+    <input id="chat-message-input" type="text" size="100" /><br />
+    <input id="chat-message-submit" type="button" value="Send" />
+    <br />
+    <div id="online-users-count">Online Users: 0</div>
+    <script>
+      // Hàm lấy giá trị từ URL parameters
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
+      const nickname = getQueryParam("nickname");
+      if (!nickname) {
+        alert("Nickname is missing. Redirecting to the home page.");
+        window.location.href = "/game";
+      }
+
+      const chatSocket = new WebSocket(
+        "ws://" + window.location.host + "/ws/wordchain/"
+      );
+
+      chatSocket.onopen = function (e) {
+        // Gửi nickname khi kết nối WebSocket thành công
+        chatSocket.send(JSON.stringify({ nickname: nickname }));
+      };
+
+      chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        if (data.type === "online_users") {
+          // Hiển thị danh sách người dùng trực tuyến
+          console.log("Online users:", data.users);
+          console.log("Number of online users:", data.count);
+
+          // Cập nhật số lượng người dùng trực tuyến trên giao diện
+          document.getElementById("online-users-count").innerText =
+            "Online Users: " + data.count;
+        }
+
+        if (data.message) {
+          document.querySelector("#chat-log").value += data.message + "\n";
+        }
+      };
+
+      chatSocket.onclose = function (e) {
+        console.error("Chat socket closed unexpectedly");
+      };
+
+      document.querySelector("#chat-message-input").focus();
+      document.querySelector("#chat-message-input").onkeyup = function (e) {
+        if (e.key === "Enter") {
+          document.querySelector("#chat-message-submit").click();
+        }
+      };
+
+      document.querySelector("#chat-message-submit").onclick = function (e) {
+        const messageInputDom = document.querySelector("#chat-message-input");
+        const message = messageInputDom.value;
+        chatSocket.send(
+          JSON.stringify({
+            message: message,
+          })
+        );
+        messageInputDom.value = "";
+      };
+    </script>
+  </body>
+</html>
