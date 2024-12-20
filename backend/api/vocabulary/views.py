@@ -15,9 +15,6 @@ import random
 from django.utils import timezone
 from datetime import datetime,timedelta
 from django.db.models import Q
-import torch
-from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
-import librosa
 from .serializers import AudioFileSerializer
 from django.db.models import Sum
 import speech_recognition as sr
