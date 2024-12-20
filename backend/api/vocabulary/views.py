@@ -14,7 +14,6 @@ from rest_framework.pagination import PageNumberPagination
 import random 
 from django.utils import timezone
 from datetime import datetime,timedelta
-from django.db.models import Q
 from .serializers import AudioFileSerializer
 from django.db.models import Sum
 import speech_recognition as sr
@@ -1070,3 +1069,26 @@ class GetRandomWordsInReviewView(APIView):
         except Exception as error:
             print("get_random_word_in_review_error:", error)
             return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+class TopCoursesView(APIView):
+    def get(self, request):
+        try:
+            top_courses = Course.objects.annotate(
+                user_count=Count('usercourseenrollment__user_id', distinct=True),
+                vocabulary_count=Count('topic__vocabularies', filter=Q(topic__vocabularies__is_deleted=False), distinct=True)
+            ).order_by('-user_count')[:5]
+
+            response_data = []
+            for course in top_courses:
+                data = {
+                    'name': course.name,
+                    'image': request.build_absolute_uri(course.image.url) if course.image else None,
+                    'total_students': course.user_count,
+                    'total_vocabularies': course.vocabulary_count
+                }
+                response_data.append(data)
+            
+            return Response(response_data)
+        except Exception as error:
+            print("error:", error)
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
