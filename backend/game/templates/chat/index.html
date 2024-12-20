@@ -1,0 +1,34 @@
+<!-- chat/templates/chat/index.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Chat Rooms</title>
+  </head>
+  <body>
+    What nickname would you like?<br />
+    <input id="nickname-input" type="text" size="100" /><br />
+    <input id="nickname-submit" type="button" value="Enter" />
+
+    <script>
+      document.querySelector("#nickname-input").focus();
+      document.querySelector("#nickname-input").onkeyup = function (e) {
+        if (e.key === "Enter") {
+          document.querySelector("#nickname-submit").click();
+        }
+      };
+
+      document.querySelector("#nickname-submit").onclick = function (e) {
+        var nickname = document.querySelector("#nickname-input").value;
+        if (nickname) {
+          // Chuyển nickname sang room.html thông qua URL parameters
+          window.location.href = `/game/wordchain?nickname=${encodeURIComponent(
+            nickname
+          )}`;
+        } else {
+          alert("Please enter a nickname.");
+        }
+      };
+    </script>
+  </body>
+</html>
