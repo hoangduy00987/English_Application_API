@@ -64,6 +64,7 @@ transformers
 soundfile 
 librosa
 SpeechRecognition
+pocketsphinx
 channels
 daphne
 channels-redis
