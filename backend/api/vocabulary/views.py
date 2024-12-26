@@ -14,13 +14,14 @@ from rest_framework.pagination import PageNumberPagination
 import random 
 from django.utils import timezone
 from datetime import datetime,timedelta
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F, Func
 import torch
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer
 import librosa
 from .serializers import AudioFileSerializer
 from django.db.models import Sum
 import speech_recognition as sr
+import calendar
 
 
 class HistoryLogPagination(PageNumberPagination):
@@ -818,8 +819,8 @@ class SpeechToTextAPIView(APIView):
                     audio_data = recognizer.record(source)
                 
                 # Chuyển đổi âm thanh sang văn bản
-                text = recognizer.recognize_google(audio_data)
-                
+                text = recognizer.recognize_sphinx(audio_data)
+
                 # Trả về kết quả
                 return Response({"text": text}, status=status.HTTP_200_OK)
             except Exception as e:
@@ -1096,3 +1097,84 @@ class TopCoursesView(APIView):
         except Exception as error:
             print("error:", error)
             return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+class ExtractMonth(Func):
+    function = 'EXTRACT'
+    template = '%(function)s(MONTH FROM %(expressions)s)'
+
+class AdminDashboardMVS(viewsets.ModelViewSet):
+    permission_classes = [IsAdminUser]
+
+    @action(methods=["GET"], detail=False, url_path="statistics_dashboard", url_name="statistics_dashboard")
+    def statistics_dashboard(self, request):
+        courses_count = Course.objects.filter(is_deleted=False)
+        private_count = courses_count.filter(is_public=False).count()
+        public_count = courses_count.filter(is_public=True).count()
+        students_count = UserCourseEnrollment.objects.all().distinct("user_id").count()
+        vocabularies_count = Vocabulary.objects.filter(is_deleted=False).count()
+        data = {}
+        data["private_courses"] = private_count
+        data["public_courses"] = public_count
+        data["students"] = students_count
+        data["vocabularies"] = vocabularies_count
+        
+        return Response(data)
+    
+    @action(methods=["GET"], detail=False, url_path="line_chart", url_name="line_chart")
+    def line_chart(self, request):
+        year = request.query_params.get('year')
+        current_time = timezone.localtime(timezone.now()).date()
+        year = int(year) if year else current_time.year
+        
+        prev_count = UserCourseEnrollment.objects \
+            .filter(enrolled_at__year__lt=year) \
+            .distinct('user_id').count()
+        query = UserCourseEnrollment.objects.filter(enrolled_at__year=year) \
+            .annotate(month=ExtractMonth('enrolled_at')) \
+            .values('month') \
+            .annotate(user_count=Count('user_id'))
+
+        data = {entry['month']: entry['user_count'] for entry in query}
+
+        result = []
+        cumulative_count = prev_count
+        for month in range(1, 13):
+            monthly_count = data.get(month, 0)
+            cumulative_count += monthly_count
+            result.append({
+                "month": month,
+                "students_count": cumulative_count
+            })
+
+        return Response(result)
+    
+    @action(methods=["GET"], detail=False, url_path="pie_chart", url_name="pie_chart")
+    def pie_chart(self, request):
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+        current_time = timezone.localtime(timezone.now()).date()
+        month = int(month) if month else current_time.month
+        year = int(year) if year else current_time.year
+        last_day = calendar.monthrange(year, month)[1]
+        last_date = timezone.datetime(year, month, last_day)
+
+        query = UserCourseEnrollment.objects \
+            .filter(enrolled_at__lte=last_date) \
+            .annotate(name_course=F('course_id__name')) \
+            .values('name_course') \
+            .annotate(user_count=Count('user_id')) \
+            .order_by('name_course')
+        
+        data = {}
+        data["month"] = month
+        data["year"] = year
+        result = [
+            {
+                "name_course": entry['name_course'],
+                "students_count": entry['user_count']
+            }
+            for entry in query
+        ]
+        data["result"] = result
+
+        return Response(data)

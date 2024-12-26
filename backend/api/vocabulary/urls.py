@@ -141,6 +141,17 @@ get_vocabularies_need_review = StudentVocabularyNeedReviewView.as_view(
     {'get':'get_vocabularies_need_review'}
 )
 
+# Dashboard Admin
+statistics_dashboard = AdminDashboardMVS.as_view(
+    {'get':'statistics_dashboard'}
+)
+line_chart = AdminDashboardMVS.as_view(
+    {'get':'line_chart'}
+)
+pie_chart = AdminDashboardMVS.as_view(
+    {'get':'pie_chart'}
+)
+
 urlpatterns = [
     #Adminfunction
     path('courses_get_all/', courses_get_all, name='courses_get_all'),
@@ -205,4 +216,9 @@ urlpatterns = [
     
     # Landing Page
     path('top_courses_in_system/', TopCoursesView.as_view(), name='top_courses_in_system'),
+
+    # Dashboard Admin
+    path('statistics_dashboard/', statistics_dashboard, name='statistics_dashboard'),
+    path('line_chart/', line_chart, name='line_chart'),
+    path('pie_chart/', pie_chart, name='pie_chart'),
 ]
