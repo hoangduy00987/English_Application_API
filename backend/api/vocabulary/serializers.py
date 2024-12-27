@@ -77,7 +77,10 @@ class TeacherCourseSerializers(serializers.ModelSerializer):
         fields = ['id','name','image','description','list_topic']    
 
     def get_list_topic(self, obj):
+        name = self.context['request'].query_params.get('name')
         topics = Topic.objects.filter(course_id=obj.id, is_deleted=False).order_by('-updated_at')
+        if name:
+            topics = topics.filter(name__icontains=name)
         return AdminTopicSerializers(topics, many=True, context=self.context).data
 
 class VocabularySerializers(serializers.ModelSerializer):
@@ -351,8 +354,11 @@ class AdminVocabularyOfTopicSerializers(serializers.ModelSerializer):
         fields = ['id', 'name', 'vocabularies']
 
     def get_vocabularies(self, obj):
+        word = self.context['request'].query_params.get('word')
         # Lấy tất cả từ vựng liên quan đến topic này và có is_deleted=False
         active_vocabularies = Vocabulary.objects.filter(topic_id=obj, is_deleted=False).order_by('-updated_at')
+        if word:
+            active_vocabularies = active_vocabularies.filter(word__icontains=word)
         # Trả về dữ liệu đã được serialize
         return AdminVocabularySerializers(active_vocabularies, many=True).data
 
