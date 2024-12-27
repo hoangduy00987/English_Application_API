@@ -631,7 +631,10 @@ class TeacherCourseViewSet(viewsets.ModelViewSet):
     @action(methods="GET", detail=False, url_path="courses_get_all", url_name="courses_get_all")
     def courses_get_all(self, request):
         try:
+            name = request.query_params.get('name')
             queryset = Course.objects.filter(is_deleted=False).order_by('-update_at')
+            if name:
+                queryset = queryset.filter(name__icontains=name)
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True, context={'request': request})
