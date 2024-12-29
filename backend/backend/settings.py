@@ -72,6 +72,7 @@ CORS_ALLOWED_ORIGINS = [
    'http://127.0.0.1:3000', 
    'https://engina.duytech.site',
    'https://api.duytech.site',
+   'https://engina-eight.vercel.app',
    'http://localhost:3007', 
    'http://localhost:3008', 
    'http://localhost:3018',
