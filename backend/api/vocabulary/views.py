@@ -116,21 +116,23 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
                 user_id=request.user, is_learned=True
             ).values_list('vocabulary_id', flat=True)
             remaining_vocab = vocabulary_list.exclude(id__in=learned_vocab_ids).first()
-            
+            remaining_count = vocabulary_list.exclude(id__in=learned_vocab_ids).count()
             if remaining_vocab:
                 serializer = self.serializer_class(remaining_vocab, context={'request': request})
+                if remaining_count == 1:
+                    next_topic = Topic.objects.filter(id__gt=topic.id,
+                                                       is_deleted=False, is_public=True).first()
+                    print(next_topic)
+                    if next_topic:
+                        next_user_topic,created = UserTopicProgress.objects.get_or_create(
+                            user_id=request.user,
+                            topic_id=next_topic
+                        )
+                        next_user_topic.is_locked = False
+                        next_user_topic.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                next_topic = Topic.objects.filter(id__gt=topic.id,
-                                                       is_deleted=False, is_public=True).first()
-                print(next_topic)
-                if next_topic:
-                    next_user_topic,created = UserTopicProgress.objects.get_or_create(
-                        user_id=request.user,
-                        topic_id=next_topic
-                    )
-                    next_user_topic.is_locked = False
-                    next_user_topic.save()
+                
                 learned_vocab = vocabulary_list.filter(id__in=learned_vocab_ids)
                 next_vocab = random.choice(learned_vocab)
                 serializer = self.serializer_class(next_vocab, context={'request': request})
@@ -149,17 +151,18 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserVocabularyProcessSerializers
     @action(methods='POST', detail=False, url_path="user_learn_vocabulary_post", url_name="user_learn_vocabulary_post")
+   
     def user_learn_vocabulary_post(self, request):
         try:
             vocabulary_id = request.data.get('vocabulary_id')
-            vocabulary_id = Vocabulary.objects.get(id=vocabulary_id)
-            if not vocabulary_id:
+            vocabulary = Vocabulary.objects.get(id=vocabulary_id)
+            if not vocabulary:
                 return Response({"message": "vocabulary_id is required."}, status=status.HTTP_400_BAD_REQUEST)
             
             # Tìm kiếm hoặc tạo mới từ vựng
             user_vocab_process, created = UserVocabularyProcess.objects.get_or_create(
                 user_id=request.user,
-                vocabulary_id=vocabulary_id,
+                vocabulary_id=vocabulary,
                 defaults={
                     "review_count": 1,
                     "is_need_review": False,
@@ -174,29 +177,40 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
                 user_vocab_process.is_learned = True
                 user_vocab_process.last_learned_at = timezone.now()
                 user_vocab_process.save()
-            topic_id = user_vocab_process.vocabulary_id.topic_id
+
+            # Xử lý tiến độ topic
+            topic_id = vocabulary.topic_id
             total_vocab_count = Vocabulary.objects.filter(topic_id=topic_id).count()
-            
             learned_vocab_count = UserVocabularyProcess.objects.filter(
                 user_id=request.user, 
                 vocabulary_id__topic_id=topic_id, 
                 is_learned=True
             ).count()
-            print(learned_vocab_count)
+
             if learned_vocab_count == total_vocab_count:
                 user_topic_process, created = UserTopicProgress.objects.get_or_create(
                     user_id=request.user,
-                    topic_id=topic_id
+                    topic_id=topic_id,
+                    defaults={
+                        "is_completed": True
+                    }
                 )
-            user_topic_process.is_completed = True
-            user_topic_process.save()
-            update_leader_board(request.user, 5, user_vocab_process.vocabulary_id.topic_id.course_id.id)
+                if not created:  # Nếu đã tồn tại, cập nhật trạng thái
+                    user_topic_process.is_completed = True
+                    user_topic_process.save()
+
+            # Cập nhật bảng xếp hạng
+            update_leader_board(request.user, 5, vocabulary.topic_id.course_id.id)
+
             return Response({'message': 'You have finished reviewing this word.'}, status=status.HTTP_200_OK)
 
+        except Vocabulary.DoesNotExist:
+            return Response({"message": "Vocabulary not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
+    
     @action(methods=['POST'], detail=False, url_path="set_next_review", url_name="set_next_review")
     def set_next_review(self, request):
         try:
@@ -985,7 +999,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({'message': 'Course ID is required'}, status=status.HTTP_400_BAD_REQUEST)
             
-            topics = Topic.objects.filter(course_id=course_id,is_deleted=False,is_public=True)
+            topics = Topic.objects.filter(course_id=course_id)
 
             progress_data = UserTopicProgress.objects.filter(topic_id__in=topics)
 
@@ -1018,25 +1032,25 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             student_id = request.query_params.get("student_id")
             course_id = request.query_params.get("course_id")
             if not student_id:
-                return Response({'message': 'student id is required'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'student  id is required'}, status=status.HTTP_400_BAD_REQUEST)
             if not course_id:
-                return Response({'message': 'course id is required'}, status=status.HTTP_400_BAD_REQUEST)
-            
+                return Response({'message':'course id is required'})
             student = User.objects.get(id=student_id)
-            course = Course.objects.get(id=course_id)
-            progress_data = UserTopicProgress.objects.filter(user_id=student, topic_id__course_id=course)
+
+            course  = Course.objects.get(id=course_id)
+            progress_data = UserTopicProgress.objects.filter(user_id=student,topic_id__course_id = course)
 
             response_data = {
-                "student_name": student.user.full_name,
-                "avatar": request.build_absolute_uri(student.user.avatar),
-                "list_topic": []
-            }
-
+                            "student_name":student.user.full_name,
+                            "avatar":request.build_absolute_uri(student.user.avatar),
+                            "list_topic":[]
+                            }
+          
             for progress in progress_data:
                 topic = progress.topic_id
 
                 topic_data = {
-                    'student_name': student.user.full_name,
+                    'student_name':student.user.full_name,
                     'topic_name': topic.name,
                     'image': request.build_absolute_uri(topic.image.url) if topic.image else None,
                     'is_completed': progress.is_completed,
@@ -1049,8 +1063,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
                     total_vocab = num_vocabulary.count()
                     topic_data['completed_vocab'] = vocab_count
                     topic_data['total_vocab'] = total_vocab
-                
-                response_data['list_topic'].append(topic_data)
+                    response_data['list_topic'].append(topic_data)
 
             return Response(response_data, status=status.HTTP_200_OK)
 
@@ -1058,7 +1071,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             return Response({'message': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
-
+        
 class GetRandomTenWordsView(APIView):
     permission_classes = [IsAuthenticated]
 
