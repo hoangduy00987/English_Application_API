@@ -109,34 +109,66 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
     @action(methods='GET', detail=False, url_path="user_learn_vocabulary_get", url_name="user_learn_vocabulary_get")
     def user_learn_vocabulary_get(self, request):
         try:
+            # Lấy thông tin topic hiện tại
             topic_id = request.query_params.get('topic_id')
             topic = Topic.objects.get(id=topic_id, is_deleted=False, is_public=True)
+
+            # Lấy danh sách từ vựng của topic hiện tại
             vocabulary_list = topic.vocabularies.filter(is_deleted=False)
+
+            # Lấy danh sách từ vựng đã học
             learned_vocab_ids = UserVocabularyProcess.objects.filter(
                 user_id=request.user, is_learned=True
             ).values_list('vocabulary_id', flat=True)
+
+            # Lấy từ vựng chưa học
             remaining_vocab = vocabulary_list.exclude(id__in=learned_vocab_ids).first()
-            
+
             if remaining_vocab:
+                # Còn từ vựng chưa học => Tiếp tục học
                 serializer = self.serializer_class(remaining_vocab, context={'request': request})
+
+                # Kiểm tra nếu đây là từ vựng cuối cùng
+                remaining_count = vocabulary_list.exclude(id__in=learned_vocab_ids).count()
+                if remaining_count == 1:
+                    # Đây là từ cuối cùng, mở khóa topic tiếp theo
+                    next_topic = Topic.objects.filter(id__gt=topic.id, is_deleted=False, is_public=True).first()
+                    if next_topic:
+                        next_user_topic, _ = UserTopicProgress.objects.get_or_create(
+                            user_id=request.user,
+                            topic_id=next_topic
+                        )
+                        next_user_topic.is_locked = False
+                        next_user_topic.save()
+
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                next_topic = Topic.objects.filter(id__gt=topic.id,
-                                                       is_deleted=False, is_public=True).first()
-                print(next_topic)
+                # Hoàn thành topic hiện tại
+                user_topic_progress, _ = UserTopicProgress.objects.get_or_create(
+                    user_id=request.user,
+                    topic_id=topic
+                )
+                user_topic_progress.is_completed = True
+                user_topic_progress.save()
+
+                # Mở khóa topic tiếp theo
+                next_topic = Topic.objects.filter(id__gt=topic.id, is_deleted=False, is_public=True).first()
                 if next_topic:
-                    next_user_topic,created = UserTopicProgress.objects.get_or_create(
+                    next_user_topic, _ = UserTopicProgress.objects.get_or_create(
                         user_id=request.user,
                         topic_id=next_topic
                     )
                     next_user_topic.is_locked = False
                     next_user_topic.save()
-                learned_vocab = vocabulary_list.filter(id__in=learned_vocab_ids)
-                next_vocab = random.choice(learned_vocab)
-                serializer = self.serializer_class(next_vocab, context={'request': request})
+
+                    return Response({
+                        "message": "Current topic completed. Next topic unlocked.",
+                        "next_topic_id": next_topic.id
+                    }, status=status.HTTP_200_OK)
+
+                # Không có topic tiếp theo => Hoàn tất lộ trình
                 return Response({
-                    "message": "All vocabulary has been learned, now reviewing.",
-                    "vocabulary": serializer.data
+                    "message": "All topics completed. Congratulations!"
                 }, status=status.HTTP_200_OK)
         except Topic.DoesNotExist:
             return Response({"message": "Topic Not Found"}, status=status.HTTP_404_NOT_FOUND)
@@ -184,12 +216,12 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
             ).count()
             print(learned_vocab_count)
             if learned_vocab_count == total_vocab_count:
-                user_topic_process, _ = UserTopicProgress.objects.get_or_create(
+                user_topic_process, created = UserTopicProgress.objects.get_or_create(
                     user_id=request.user,
-                    topic_id=topic_id,
-                    is_locked=False,
-                    is_completed=True
+                    topic_id=topic_id
                 )
+            user_topic_process.is_completed = True
+            user_topic_process.save()
             update_leader_board(request.user, 5, user_vocab_process.vocabulary_id.topic_id.course_id.id)
             return Response({'message': 'You have finished reviewing this word.'}, status=status.HTTP_200_OK)
 
@@ -985,7 +1017,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({'message': 'Course ID is required'}, status=status.HTTP_400_BAD_REQUEST)
             
-            topics = Topic.objects.filter(course_id=course_id)
+            topics = Topic.objects.filter(course_id=course_id,is_deleted=False,is_public=True)
 
             progress_data = UserTopicProgress.objects.filter(topic_id__in=topics)
 
