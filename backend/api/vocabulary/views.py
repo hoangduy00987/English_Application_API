@@ -999,7 +999,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({'message': 'Course ID is required'}, status=status.HTTP_400_BAD_REQUEST)
             
-            topics = Topic.objects.filter(course_id=course_id,is_deleted=False)
+            topics = Topic.objects.filter(course_id=course_id,is_deleted=False).order_by('id')
 
             progress_data = UserTopicProgress.objects.filter(topic_id__in=topics)
 
