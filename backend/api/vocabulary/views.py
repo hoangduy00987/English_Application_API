@@ -115,29 +115,22 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
             learned_vocab_ids = UserVocabularyProcess.objects.filter(
                 user_id=request.user, is_learned=True
             ).values_list('vocabulary_id', flat=True)
-
-            # Lấy số lượng từ vựng chưa học
             remaining_vocab = vocabulary_list.exclude(id__in=learned_vocab_ids).first()
-            remaining_count = vocabulary_list.exclude(id__in=learned_vocab_ids).count()
-
-            # Nếu còn từ vựng chưa học
+            
             if remaining_vocab:
                 serializer = self.serializer_class(remaining_vocab, context={'request': request})
-                
-                if remaining_count == 1:
-                    next_topic = Topic.objects.filter(id__gt=topic.id, is_deleted=False, is_public=True).first()
-                    if next_topic:
-                        next_user_topic, _ = UserTopicProgress.objects.get_or_create(
-                            user_id=request.user,
-                            topic_id=next_topic
-                        )
-                        next_user_topic.is_locked = False
-                        next_user_topic.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            # Nếu chỉ còn 1 từ vựng chưa học, mở khóa topic tiếp theo
             else:
-                
-                # Lấy một từ vựng đã học để review
+                next_topic = Topic.objects.filter(id__gt=topic.id,
+                                                       is_deleted=False, is_public=True).first()
+                print(next_topic)
+                if next_topic:
+                    next_user_topic,created = UserTopicProgress.objects.get_or_create(
+                        user_id=request.user,
+                        topic_id=next_topic
+                    )
+                    next_user_topic.is_locked = False
+                    next_user_topic.save()
                 learned_vocab = vocabulary_list.filter(id__in=learned_vocab_ids)
                 next_vocab = random.choice(learned_vocab)
                 serializer = self.serializer_class(next_vocab, context={'request': request})
@@ -145,8 +138,6 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
                     "message": "All vocabulary has been learned, now reviewing.",
                     "vocabulary": serializer.data
                 }, status=status.HTTP_200_OK)
-
-
         except Topic.DoesNotExist:
             return Response({"message": "Topic Not Found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
