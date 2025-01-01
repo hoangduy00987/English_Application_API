@@ -152,7 +152,7 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
     def user_learn_vocabulary_post(self, request):
         try:
             vocabulary_id = request.data.get('vocabulary_id')
-
+            vocabulary_id = Vocabulary.objects.get(id=vocabulary_id)
             if not vocabulary_id:
                 return Response({"message": "vocabulary_id is required."}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -174,7 +174,22 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
                 user_vocab_process.is_learned = True
                 user_vocab_process.last_learned_at = timezone.now()
                 user_vocab_process.save()
-
+            topic_id = user_vocab_process.vocabulary_id.topic_id
+            total_vocab_count = Vocabulary.objects.filter(topic_id=topic_id).count()
+            
+            learned_vocab_count = UserVocabularyProcess.objects.filter(
+                user_id=request.user, 
+                vocabulary_id__topic_id=topic_id, 
+                is_learned=True
+            ).count()
+            print(learned_vocab_count)
+            if learned_vocab_count == total_vocab_count:
+                user_topic_process, _ = UserTopicProgress.objects.get_or_create(
+                    user_id=request.user,
+                    topic_id=topic_id,
+                    is_locked=False,
+                    is_completed=True
+                )
             update_leader_board(request.user, 5, user_vocab_process.vocabulary_id.topic_id.course_id.id)
             return Response({'message': 'You have finished reviewing this word.'}, status=status.HTTP_200_OK)
 
