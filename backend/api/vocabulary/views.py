@@ -156,32 +156,32 @@ class UserVocabularyProcessViewSet(viewsets.ModelViewSet):
             if not vocabulary_id:
                 return Response({"message": "vocabulary_id is required."}, status=status.HTTP_400_BAD_REQUEST)
             
-            # check user did learned this vocabulary
-            user_vocab_process = UserVocabularyProcess.objects.filter(
+            # Tìm kiếm hoặc tạo mới từ vựng
+            user_vocab_process, created = UserVocabularyProcess.objects.get_or_create(
                 user_id=request.user,
-                vocabulary_id=vocabulary_id
-            ).first()
+                vocabulary_id=vocabulary_id,
+                defaults={
+                    "review_count": 1,
+                    "is_need_review": False,
+                    "is_learned": True,
+                    "last_learned_at": timezone.now(),
+                }
+            )
 
-            if user_vocab_process:
+            if not created:  # Nếu từ vựng đã tồn tại
                 user_vocab_process.review_count = (user_vocab_process.review_count or 0) + 1
                 user_vocab_process.is_need_review = False
                 user_vocab_process.is_learned = True
                 user_vocab_process.last_learned_at = timezone.now()
                 user_vocab_process.save()
-                
-                update_leader_board(request.user, 5 , user_vocab_process.vocabulary_id.topic_id.course_id.id)
-                return Response({'message':'You have finished reviewing this word.'}, status=status.HTTP_200_OK)
-            else:
-                serializer = self.serializer_class(data=request.data)
-                if serializer.is_valid():
-                    serializer.save(request=request)
-                    return Response({'message':'You have finished studying this word.'}, status=status.HTTP_200_OK)
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
+
+            update_leader_board(request.user, 5, user_vocab_process.vocabulary_id.topic_id.course_id.id)
+            return Response({'message': 'You have finished reviewing this word.'}, status=status.HTTP_200_OK)
+
         except Exception as error:
-            print("error", error) 
+            print("error", error)
             return Response({"message": "An error occurred on the server.", "details": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
     @action(methods=['POST'], detail=False, url_path="set_next_review", url_name="set_next_review")
     def set_next_review(self, request):
         try:
