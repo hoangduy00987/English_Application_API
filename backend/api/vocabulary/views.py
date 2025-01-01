@@ -999,7 +999,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             if not course_id:
                 return Response({'message': 'Course ID is required'}, status=status.HTTP_400_BAD_REQUEST)
             
-            topics = Topic.objects.filter(course_id=course_id)
+            topics = Topic.objects.filter(course_id=course_id,is_deleted=False)
 
             progress_data = UserTopicProgress.objects.filter(topic_id__in=topics)
 
@@ -1032,25 +1032,25 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             student_id = request.query_params.get("student_id")
             course_id = request.query_params.get("course_id")
             if not student_id:
-                return Response({'message': 'student  id is required'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'student id is required'}, status=status.HTTP_400_BAD_REQUEST)
             if not course_id:
-                return Response({'message':'course id is required'})
+                return Response({'message': 'course id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
             student = User.objects.get(id=student_id)
-
-            course  = Course.objects.get(id=course_id)
-            progress_data = UserTopicProgress.objects.filter(user_id=student,topic_id__course_id = course)
+            course = Course.objects.get(id=course_id)
+            progress_data = UserTopicProgress.objects.filter(user_id=student, topic_id__course_id=course)
 
             response_data = {
-                            "student_name":student.user.full_name,
-                            "avatar":request.build_absolute_uri(student.user.avatar),
-                            "list_topic":[]
-                            }
-          
+                "student_name": student.user.full_name,
+                "avatar": request.build_absolute_uri(student.user.avatar),
+                "list_topic": []
+            }
+
             for progress in progress_data:
                 topic = progress.topic_id
 
                 topic_data = {
-                    'student_name':student.user.full_name,
+                    'student_name': student.user.full_name,
                     'topic_name': topic.name,
                     'image': request.build_absolute_uri(topic.image.url) if topic.image else None,
                     'is_completed': progress.is_completed,
@@ -1063,7 +1063,8 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
                     total_vocab = num_vocabulary.count()
                     topic_data['completed_vocab'] = vocab_count
                     topic_data['total_vocab'] = total_vocab
-                    response_data['list_topic'].append(topic_data)
+                
+                response_data['list_topic'].append(topic_data)
 
             return Response(response_data, status=status.HTTP_200_OK)
 
@@ -1071,6 +1072,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
             return Response({'message': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as error:
             return Response({'message': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
         
 class GetRandomTenWordsView(APIView):
     permission_classes = [IsAuthenticated]
