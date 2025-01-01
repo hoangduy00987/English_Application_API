@@ -121,7 +121,7 @@ class UserVocabularyViewSet(viewsets.ModelViewSet):
                 serializer = self.serializer_class(remaining_vocab, context={'request': request})
                 if remaining_count == 1:
                     next_topic = Topic.objects.filter(id__gt=topic.id,
-                                                       is_deleted=False, is_public=True).first()
+                                                       is_deleted=False, is_public=True,course_id=topic.course_id).first()
                     print(next_topic)
                     if next_topic:
                         next_user_topic,created = UserTopicProgress.objects.get_or_create(
