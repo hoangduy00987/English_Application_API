@@ -1057,7 +1057,7 @@ class StudentProgressView(viewsets.ReadOnlyModelViewSet):
                 }
 
                 if not progress.is_completed:
-                    vocabulary = UserVocabularyProcess.objects.filter(vocabulary_id__topic_id=topic)
+                    vocabulary = UserVocabularyProcess.objects.filter(user_id = student.user.id,vocabulary_id__topic_id=topic)
                     num_vocabulary = Vocabulary.objects.filter(topic_id=topic)
                     vocab_count = vocabulary.count()
                     total_vocab = num_vocabulary.count()
